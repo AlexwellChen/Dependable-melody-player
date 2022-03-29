@@ -1,0 +1,5 @@
+-I/Users/alexwell/Desktop/RTS-Lab-original
+-I/Users/alexwell/Desktop/RTS-Lab-original/$(ProjectPath)
+-I/Users/alexwell/Desktop/RTS-Lab-original/$(ProjectPath)/device/inc
+-I/Users/alexwell/Desktop/RTS-Lab-original/$(ProjectPath)/driver/inc
+-DSTM32F40_41xxx
