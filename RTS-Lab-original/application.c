@@ -110,6 +110,9 @@ Controller controller =  { initObject(),0,0,0,120,0};
 void reader(App*, int);
 void receiver(App*, int);
 void user_call_back(App*, int);
+int getMyRank(App*, int);
+int getLeaderRank(App*, int);
+int getBoardNum(App*, int);
 void three_history(App *,Time);
 void send_Traversing_msg(App*, int);
 void send_BoardNum_msg(App*,int);
@@ -124,18 +127,6 @@ void change_bpm(Controller *, int );
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
 Can can0 = initCan(CAN_PORT0, &app, receiver);
-
-/*protocol
- * msgId 1: inc the volumn
- * msgId 2: dec the volumn
- * msgId 3: mute
- * msgId 4: pause
- * msgId 5: change the positive key msg.buff = new value (buffer size = 1)
- * msgId 6: change the negative key msg.buff = new value (buffer size = 1)
- * msgId 7: change the bpm msg.buff = new value (buffer size = 3)
- * msgId 127: Traversing the board on the CAN network. msg.buff = current board number detected, used for myRank
- */
-
 
 void check_hold(App *self, int unused){
 	int state = SIO_READ(&sio0);
@@ -241,16 +232,36 @@ void initNetwork(App* self, int unused){
 	self->myRank = -1;
 }
 
+int getMyRank(App* app, int unused){
+	return app->myRank;
+}
+int getLeaderRank(App* app, int unused){
+	return app->leaderRank;
+}
+int getBoardNum(App* app, int unused){
+	return app->boardNum;
+}
+/* CAN protocol
+ * msgId->1: increase the volumn
+ * msgId->2: decrease the volumn
+ * msgId->3: mute the melody
+ * msgId->4: pause the melody
+ * msgId->5: change the positive key msg.buff = new value (buffer size = 1)
+ * msgId->6: change the negative key msg.buff = new value (buffer size = 1)
+ * msgId->7: change the bpm msg.buff = new value (buffer size = 3)
+ * msgId->8: reset the key and tempo
+ * msgId->126: send board number in current network
+ * msgId->127: Traversing the board on the CAN network. msg.buff = current board number detected, used for myRank
+ */
 void receiver(App* self, int unused)
 {	
 	SCI_WRITE(&sci0,"--------------------receiver-------------------------\n");
     CANMsg msg;
     CAN_RECEIVE(&can0, &msg);
-	SCI_WRITE(&sci0, "Can msg received: ");
+	SCI_WRITE(&sci0, "Can msg received: \n");
 	char strbuff[100];
-	snprintf(strbuff,100,"%d  \n",msg.msgId);
+	snprintf(strbuff,100,"ID: %d\n",msg.msgId);
 	SCI_WRITE(&sci0,strbuff);
-//	SCI_WRITE(&sci0, msg.msgId);
 	// First check whether the message is network traversal
 	if(msg.msgId == 127){
 		if(self->myRank == -1){
@@ -270,13 +281,7 @@ void receiver(App* self, int unused)
 		return;
 	}
 
-//	if(msg.nodeId != self->leaderRank) return; // Not responding to messages from non-leaders
-
-    SCI_WRITE(&sci0, "Can msg received: ");
-	//SCI_WRITE(&sci0, msg.msgId);
-	//SCI_WRITE(&sci0, msg.nodeId);
-    SCI_WRITE(&sci0, msg.buff);
-	SCI_WRITE(&sci0, "\n ");
+	if(msg.nodeId != self->leaderRank) return; // Not responding to messages from non-leaders
 	int num = 0;
 	if(self->mode){
 			
@@ -308,10 +313,14 @@ void receiver(App* self, int unused)
 				num = atoi(msg.buff);
 				SYNC(&controller,change_bpm,num);
 				break;
+			case 8:
+				SYNC(&controller, change_bpm, 120);
+				SYNC(&controller, change_key, 0);
 			case 126:
 				num = atoi(msg.buff);
 				self->boardNum = num;
 				SYNC(self, send_BoardNum_msg, num);
+				break;
 		}
 	}
 }
@@ -384,7 +393,8 @@ void toggle_led(Controller* self, int arg){
 }
 void startSound(Controller* self, int arg){
 	if(self->play==0) return;
-	
+	int boardNum = SYNC(&app, getBoardNum, 0);
+	int myRank = SYNC(&app, getMyRank, 0);
 	SYNC(&generator,reset_gap,0);
 	
 	int offset = self->key + 5+5;
@@ -402,8 +412,11 @@ void startSound(Controller* self, int arg){
 		AFTER(MSEC(500*interval),&controller,toggle_led,self->bpm);
 	}
 	self->note = (self->note+1)%32;
-    SEND(MSEC(tempo*500*interval-50),MSEC(50),&generator,gap,0);
-    SEND(MSEC(tempo*500*interval),MSEC(tempo*250*interval),self,startSound,self->bpm);
+	if(self->note%boardNum == myRank){
+		SEND(MSEC(tempo*500*interval-50),MSEC(50),&generator,gap,0);
+    	SEND(MSEC(tempo*500*interval),MSEC(tempo*250*interval),self,startSound,self->bpm);
+	}
+    
 
 }
 
@@ -461,16 +474,12 @@ void send_BoardNum_msg(App* self,int num){
 	char strbuff[100];
 	snprintf(strbuff,100,"BoardNum: %d \nLeaderRank: %d \nMyRank: %d \n",self->boardNum,self->leaderRank,self->myRank);
 	SCI_WRITE(&sci0,strbuff);
-	if(self->myRank == self->leaderRank){
-		// Only master can modify nodeId.
-		msg.nodeId = self->myRank;
-	}
+	msg.nodeId = self->leaderRank;
 	msg.msgId = 126;
-	char str_num[2]; 
+	char str_num[1]; 
    	sprintf(str_num,"%d", abs(num));
-   	msg.length = 2;
+   	msg.length = 1;
     msg.buff[0] = str_num[0];
-    msg.buff[1] = str_num[1];
 	CAN_SEND(&can0, &msg);
 }
 
@@ -480,18 +489,14 @@ void send_Traversing_msg(App* self,int num){
 	char strbuff[100];
 	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
 	SCI_WRITE(&sci0,strbuff);
-	if(self->myRank == self->leaderRank){
-		// Only master can modify nodeId.
-		msg.nodeId = self->myRank;
-	}
 	msg.nodeId = self->leaderRank;
 	msg.msgId = 127;
-	char str_num[2]; 
+	char str_num[1]; 
    	sprintf(str_num,"%d", abs(num));
-   	msg.length = 2;
+   	msg.length = 1;
     msg.buff[0] = str_num[0];
-    msg.buff[1] = str_num[1];
 	CAN_SEND(&can0, &msg);
+	SCI_WRITE(&sci0,"CAN message send!\n");
 }
 
 void send_key_msg(App* self,int num){
@@ -534,6 +539,7 @@ void reader(App* self, int c)
      SCI_WRITE(&sci0, "Rcv: \'");
 	 SCI_WRITECHAR(&sci0, c);
      SCI_WRITE(&sci0, "\'\n");
+	 char strbuff[100];
 	 if(self->mode == -1){
 		 SCI_WRITE(&sci0, "Type 'o' to enter master mode.\n");
 	 }
@@ -657,6 +663,11 @@ void reader(App* self, int c)
 			CAN_SEND(&can0, &msg);
 			
 			break;
+		case 'x':
+			snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
+			SCI_WRITE(&sci0,strbuff);
+			break;
+			
 	}
 	if ((c >='0'&&c<='9') || (self->count==0 && c == '-')){
 		self->c[self->count++] = c;
@@ -667,7 +678,9 @@ void reader(App* self, int c)
 void startApp(App* self, int arg)
 {
     CANMsg msg;
-
+	Serial sci0 = initSerial(SCI_PORT0, &app, reader);
+	SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
+	Can can0 = initCan(CAN_PORT0, &app, receiver);
     CAN_INIT(&can0);
     SCI_INIT(&sci0);
 	SIO_INIT(&sio0);
