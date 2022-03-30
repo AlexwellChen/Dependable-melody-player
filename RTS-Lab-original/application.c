@@ -64,7 +64,7 @@ typedef struct {
     Time nums[3];
     int nums_count ;
 	int mode;
-	//0 is master, 1 is slave
+	//-1 is init, 0 is master, 1 is slave
 	int press_mode;
 	Timer timer;
 	int bounce;
@@ -72,6 +72,9 @@ typedef struct {
 	Time previous_time;
 	int trigmode;
 	int inteval;
+	int boardNum; // init with -1
+	int myRank; // init with -1
+	int leaderRank; // init with -1
 	
 } App;
 
@@ -101,13 +104,15 @@ typedef struct {
     int period;
 }Sound;
 
-App app = { initObject(), 0, 'X', {0},0,0,0,initTimer(),0,0,0,0,0 };
+App app = { initObject(), 0, 'X', {0},0,-1,0,initTimer(),0,0,0,0,0,-1,-1,-1,-1};
 Sound generator = { initObject(), 0,0 , 5,0,1,0,0};
 Controller controller =  { initObject(),0,0,0,120,0};
 void reader(App*, int);
 void receiver(App*, int);
 void user_call_back(App*, int);
 void three_history(App *,Time);
+void send_Traversing_msg(App*, int);
+void send_BoardNum_msg(App*,int);
 void startSound(Controller* , int);
 void mute (Sound* );
 void volume_control (Sound* , int );
@@ -125,10 +130,10 @@ Can can0 = initCan(CAN_PORT0, &app, receiver);
  * msgId 2: dec the volumn
  * msgId 3: mute
  * msgId 4: pause
- *  msgId 5: change the key msg.buff = new value (buffer size = 1)
- * 		nodeId 1 negative nodeId 2 positive
- *  msgId 6: change the bpm msg.buff = new value (buffer size = 3)
- * 		
+ * msgId 5: change the positive key msg.buff = new value (buffer size = 1)
+ * msgId 6: change the negative key msg.buff = new value (buffer size = 1)
+ * msgId 7: change the bpm msg.buff = new value (buffer size = 3)
+ * msgId 127: Traversing the board on the CAN network. msg.buff = current board number detected, used for myRank
  */
 
 
@@ -229,10 +234,44 @@ void user_call_back(App *self, int unused){
 	}
 }
 
+void initNetwork(App* self, int unused){
+	self->boardNum = -1;
+	self->mode = -1;
+	self->leaderRank = -1;
+	self->myRank = -1;
+}
+
 void receiver(App* self, int unused)
-{
+{	
+	SCI_WRITE(&sci0,"--------------------receiver-------------------------\n");
     CANMsg msg;
     CAN_RECEIVE(&can0, &msg);
+	SCI_WRITE(&sci0, "Can msg received: ");
+	char strbuff[100];
+	snprintf(strbuff,100,"%d  \n",msg.msgId);
+	SCI_WRITE(&sci0,strbuff);
+//	SCI_WRITE(&sci0, msg.msgId);
+	// First check whether the message is network traversal
+	if(msg.msgId == 127){
+		if(self->myRank == -1){
+			self->myRank = atoi(msg.buff); // msg.buff carries the current board number detected on the network
+			// Send msg to next board with msg.buff++
+			self->leaderRank = msg.nodeId;
+			ASYNC(self, send_Traversing_msg, self->myRank+1);
+		}else{
+			if(self->boardNum == -1){
+				// 1. The message is loop back to leader board.
+				self->boardNum = atoi(msg.buff);
+				ASYNC(self, send_BoardNum_msg, self->boardNum);
+			}else{
+				// 2. Network retraversal because some boards out. Need to test boardNum and myRank
+			}
+		}
+		return;
+	}
+
+//	if(msg.nodeId != self->leaderRank) return; // Not responding to messages from non-leaders
+
     SCI_WRITE(&sci0, "Can msg received: ");
 	//SCI_WRITE(&sci0, msg.msgId);
 	//SCI_WRITE(&sci0, msg.nodeId);
@@ -256,18 +295,23 @@ void receiver(App* self, int unused)
 				SYNC(&controller,pause_c,0);
 				break;
 			case 5:
-				//negative key
+				//positive key
 				num = atoi(msg.buff);
-				if(msg.nodeId==1){
-					num = -num;
-				}
 				SYNC(&controller,change_key,num);
 				break;
 			case 6:
+				//negative key
 				num = atoi(msg.buff);
-				
+				SYNC(&controller,change_key,-num);
+				break;
+			case 7:
+				num = atoi(msg.buff);
 				SYNC(&controller,change_bpm,num);
 				break;
+			case 126:
+				num = atoi(msg.buff);
+				self->boardNum = num;
+				SYNC(self, send_BoardNum_msg, num);
 		}
 	}
 }
@@ -403,21 +447,64 @@ void change_bpm(Controller *self, int num){
  * msgId 2: dec the volumn
  * msgId 3: mute
  * msgId 4: pause
- *  msgId 5: change the key msg.buff = new value (buffer size = 1)
- * 		nodeId 1 negative nodeId 2 positive
- *  msgId 6: change the bpm msg.buff = new value (buffer size = 3)
+ * msgId 5: change the positive key msg.buff = new value (buffer size = 1)
+ * msgId 6: change the negative key msg.buff = new value (buffer size = 1)
+ * msgId 7: change the bpm msg.buff = new value (buffer size = 3)
+ * msgId 126: send the board number in the network. msg.buff = boardNum(buffer size = 2)
+ * msgId 127: Traversing the board on the CAN network. msg.buff = current board number detected, used for myRank
  * 		
  */
+
+void send_BoardNum_msg(App* self,int num){
+	CANMsg msg;
+	SCI_WRITE(&sci0,"--------------------send_BoardNum_msg-------------------------\n");
+	char strbuff[100];
+	snprintf(strbuff,100,"BoardNum: %d \nLeaderRank: %d \nMyRank: %d \n",self->boardNum,self->leaderRank,self->myRank);
+	SCI_WRITE(&sci0,strbuff);
+	if(self->myRank == self->leaderRank){
+		// Only master can modify nodeId.
+		msg.nodeId = self->myRank;
+	}
+	msg.msgId = 126;
+	char str_num[2]; 
+   	sprintf(str_num,"%d", abs(num));
+   	msg.length = 2;
+    msg.buff[0] = str_num[0];
+    msg.buff[1] = str_num[1];
+	CAN_SEND(&can0, &msg);
+}
+
+void send_Traversing_msg(App* self,int num){
+	CANMsg msg;
+	SCI_WRITE(&sci0,"--------------------send_Traversing_msg-------------------------\n");
+	char strbuff[100];
+	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
+	SCI_WRITE(&sci0,strbuff);
+	if(self->myRank == self->leaderRank){
+		// Only master can modify nodeId.
+		msg.nodeId = self->myRank;
+	}
+	msg.nodeId = self->leaderRank;
+	msg.msgId = 127;
+	char str_num[2]; 
+   	sprintf(str_num,"%d", abs(num));
+   	msg.length = 2;
+    msg.buff[0] = str_num[0];
+    msg.buff[1] = str_num[1];
+	CAN_SEND(&can0, &msg);
+}
+
 void send_key_msg(App* self,int num){
    
    CANMsg msg;
-   msg.msgId = 5;
+   
    if (num < 0){
-       msg.nodeId = 1;
+	   msg.msgId = 6;
    }
    else{
-       msg.nodeId = 2;
+	   msg.msgId = 5;
    }
+   msg.nodeId = self->myRank;
    char str_num[1]; 
    sprintf(str_num,"%d", abs(num));
    msg.length = 1;
@@ -432,7 +519,7 @@ void send_bpm_msg(App* self, int num){
     char str_num[3]; 
     sprintf(str_num,"%d", num);
     msg.msgId = 6;
-    msg.nodeId = 1;
+    msg.nodeId = self->myRank;
     msg.length = 3;
     msg.buff[0] = str_num[0];
     msg.buff[1] = str_num[1];
@@ -440,20 +527,52 @@ void send_bpm_msg(App* self, int num){
 		msg.buff[2] = str_num[2];
     CAN_SEND(&can0, &msg);
 }
+
 void reader(App* self, int c)
 {
+	 SCI_WRITE(&sci0,"--------------------reader-------------------------\n");
      SCI_WRITE(&sci0, "Rcv: \'");
-     SCI_WRITECHAR(&sci0,c);
+	 SCI_WRITECHAR(&sci0, c);
      SCI_WRITE(&sci0, "\'\n");
+	 if(self->mode == -1){
+		 SCI_WRITE(&sci0, "Type 'o' to enter master mode.\n");
+	 }
 	 int num;
 	 CANMsg msg;
 	 if(c =='o'){
-			self->mode = !self->mode;
-			if(self->mode){
-				SCI_WRITE(&sci0, "In slave mode\n");
-			} else{
-				SCI_WRITE(&sci0, "In master mode\n");
+			if(self->mode == -1){
+				// winner
+				SCI_WRITE(&sci0,"Winner\n");
+				self->mode = 0; // enter master mode
+				self->myRank = 0;
+				self->leaderRank = 0;
+				
+				char strbuff[100];
+				snprintf(strbuff,100,"Mode: %d\n",self->mode);
+				SCI_WRITE(&sci0,strbuff);
+	
+				ASYNC(self, send_Traversing_msg, 1);
+				SCI_WRITE(&sci0, "Traversing msg send!\n");
+			}else if(self->mode == 0){
+				// no sense
+				SCI_WRITE(&sci0, "You are in master mode!\n");
+				char strbuff[100];
+				snprintf(strbuff,100,"Mode: %d\n",self->mode);
+				SCI_WRITE(&sci0,strbuff);
+			}else{
+				// loser
+				SCI_WRITE(&sci0, "You are in slave mode!\n");
+				char strbuff[100];
+				snprintf(strbuff,100,"Mode: %d\n",self->mode);
+				SCI_WRITE(&sci0,strbuff);
 			}
+			// if(self->mode){
+			// 	// mode == 1 -> slave mode
+			// 	SCI_WRITE(&sci0, "In slave mode\n");
+			// } else{
+			// 	// mode == 0 -> slave mode
+			// 	SCI_WRITE(&sci0, "In master mode\n");
+			// }
 	}
 	
 	switch(c) {
@@ -557,7 +676,13 @@ void startApp(App* self, int arg)
 	T_RESET(&self->timer);
 	SIO_WRITE(&sio0,0);
     SCI_WRITE(&sci0, "Hello, hello...\n");
-
+	initNetwork(self, 0);
+//	SYNC(self, initNetwork, 0);
+	SCI_WRITE(&sci0,"--------------------startApp-------------------------\n");
+	char strbuff[100];
+	snprintf(strbuff,100,"start App Mode: %d\nboardNum: %d\nmyRank: %d\nleaderRank: %d\n",self->mode, self->boardNum, self->myRank, self->leaderRank);
+	SCI_WRITE(&sci0,strbuff);
+//	self->mode = -1;
     msg.msgId = 1;
     msg.nodeId = 1;
     msg.length = 6;
@@ -568,6 +693,7 @@ void startApp(App* self, int arg)
     msg.buff[4] = 'o';
     msg.buff[5] = 0;
     CAN_SEND(&can0, &msg);
+
 	ASYNC(&controller,startSound,0);
 	ASYNC(&generator, play,0);
 }
