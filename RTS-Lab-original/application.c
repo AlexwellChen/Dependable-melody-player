@@ -75,7 +75,7 @@ typedef struct {
 	int boardNum; // init with -1
 	int myRank; // init with -1
 	int leaderRank; // init with -1
-	
+	int print_flag;
 } App;
 
 typedef struct {
@@ -85,6 +85,7 @@ typedef struct {
 	int note;
     int bpm;
 	int change_bpm_flag;
+	int print_flag;
 } Controller;
 
 /* Application class for sound generator
@@ -104,9 +105,9 @@ typedef struct {
     int period;
 }Sound;
 
-App app = { initObject(), 0, 'X', {0},0,-1,0,initTimer(),0,0,0,0,0,-1,-1,-1,-1};
+App app = { initObject(), 0, 'X', {0},0,-1,0,initTimer(),0,0,0,0,0,-1,-1,-1,-1,0};
 Sound generator = { initObject(), 0,0 , 5,0,1,0,0};
-Controller controller =  { initObject(),0,0,0,120,0};
+Controller controller =  { initObject(),0,0,0,120,0,0};
 void reader(App*, int);
 void receiver(App*, int);
 void user_call_back(App*, int);
@@ -116,14 +117,17 @@ int getBoardNum(App*, int);
 void three_history(App *,Time);
 void send_Traversing_msg(App*, int);
 void send_BoardNum_msg(App*,int);
+void send_Reset_msg(App*, int);
 void startSound(Controller* , int);
 void mute (Sound* );
 void volume_control (Sound* , int );
 void pause(Sound *, int );
 void pause_c(Controller *, int );
- 
+void set_print_flag(Controller*, int);
 void change_key(Controller *, int );
 void change_bpm(Controller *, int );
+void print_tempo(Controller *, int );
+
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
 Can can0 = initCan(CAN_PORT0, &app, receiver);
@@ -133,9 +137,7 @@ void check_hold(App *self, int unused){
 	Time now = T_SAMPLE(&self->timer) ;
 	if((now-self->previous_time)>=SEC(1)&&(state==0))
 	//press state: 1 for released, 0 for pressed
-	SCI_WRITE(&sci0,"Entered press-hold mode\n");
-
-	
+	SCI_WRITE(&sci0,"Entered press-hold mode\n");	
 }
 
 void three_history(App *self,Time num){
@@ -214,8 +216,15 @@ void user_call_back(App *self, int unused){
 			SCI_WRITE(&sci0,WCET);
 			if(diff>SEC(2)){
 				SCI_WRITE(&sci0,"Reset bpm to 120\n");
-				int bpm = 120;
-				SYNC(&controller,change_bpm,bpm);
+				// int bpm = 120;
+				// SYNC(&controller,change_bpm,bpm);
+				if(self->mode ==0){
+					//check if leader
+					SCI_WRITE(&sci0,"Reseting BPM and key from master\n");
+					ASYNC(self, send_Reset_msg, 0);
+					SYNC(&controller, change_bpm, 120);
+					SYNC(&controller, change_key, 0);
+				}
 			}
 			//T_RESET(&self->timer);
 		}
@@ -232,6 +241,7 @@ void initNetwork(App* self, int unused){
 	self->myRank = -1;
 }
 
+
 int getMyRank(App* app, int unused){
 	return app->myRank;
 }
@@ -240,6 +250,9 @@ int getLeaderRank(App* app, int unused){
 }
 int getBoardNum(App* app, int unused){
 	return app->boardNum;
+}
+int getMute(Sound* self, int unused){
+	return self->volumn;
 }
 /* CAN protocol
  * msgId->1: increase the volumn
@@ -321,6 +334,14 @@ void receiver(App* self, int unused)
 				self->boardNum = num;
 				SYNC(self, send_BoardNum_msg, num);
 				break;
+			case 125:
+				//for slaves:
+				//Forward reset message to others, until the msg get back to leader in the loop
+				if(self->myRank!=self->leaderRank){
+					ASYNC(&controller, set_print_flag,1);
+					ASYNC(&controller, print_tempo, 0);
+					SYNC(self, send_Reset_msg,0);
+				}		
 		}
 	}
 }
@@ -340,12 +361,24 @@ void deadline_control_sound(Sound* self, int arg){
 		self->deadline_enabled = 0;
 	}
 }
+
+void print_mute_state(App *self, int arg){
+	int volumn = SYNC(&generator,getMute,0);
+	if(volumn==0&&self->print_flag&&self->mode==1){
+		SCI_WRITE(&sci0, "Board is muted\n");
+		AFTER(SEC(10),&app, print_mute_state,0);
+	}else return;
+}
+
 void mute (Sound* self){
 	if(self->volumn == 0){
 		self->volumn = self->prev_volumn;
+		//SCI_WRITE(&sci0, "Board is unmuted\n");
 	}else{
 		self->prev_volumn = self->volumn;
 		self->volumn = 0;
+		//SCI_WRITE(&sci0, "Board is muted\n");
+		ASYNC(&app, print_mute_state,0);
 	}	
 }
 
@@ -465,7 +498,7 @@ void change_bpm(Controller *self, int num){
  * msgId 7: change the bpm msg.buff = new value (buffer size = 3)
  * msgId 126: send the board number in the network. msg.buff = boardNum(buffer size = 2)
  * msgId 127: Traversing the board on the CAN network. msg.buff = current board number detected, used for myRank
- * 		
+ * 	msgid 125: reset the bpm to 120 and key to 0, nodeid is leader's rank
  */
 
 void send_BoardNum_msg(App* self,int num){
@@ -497,6 +530,17 @@ void send_Traversing_msg(App* self,int num){
     msg.buff[0] = str_num[0];
 	CAN_SEND(&can0, &msg);
 	SCI_WRITE(&sci0,"CAN message send!\n");
+}
+
+void send_Reset_msg(App*self, int unused){
+    CANMsg msg;
+	SCI_WRITE(&sci0,"--------------------send_Reset_msg-------------------------\n");
+	//char strbuff[100];
+	//snprintf(strbuff,100,"BoardNum: %d \nLeaderRank: %d \nMyRank: %d \n",self->boardNum,self->leaderRank,self->myRank);
+	//SCI_WRITE(&sci0,strbuff);
+	msg.nodeId = self->leaderRank;
+	msg.msgId = 125;
+	CAN_SEND(&can0, &msg);
 }
 
 void send_key_msg(App* self,int num){
@@ -531,6 +575,17 @@ void send_bpm_msg(App* self, int num){
 	if(num>99)
 		msg.buff[2] = str_num[2];
     CAN_SEND(&can0, &msg);
+}
+
+void set_print_flag(Controller* self, int num){
+	self->print_flag =num;
+}
+void print_tempo(Controller *self, int num){
+	if(self->print_flag==0) return;
+	char strbuff[100];
+	snprintf(strbuff,100,"Current tempo: %d\n",self->bpm);
+	SCI_WRITE(&sci0,strbuff);
+	AFTER(SEC(10),self,print_tempo,0);
 }
 
 void reader(App* self, int c)
@@ -666,6 +721,51 @@ void reader(App* self, int c)
 		case 'x':
 			snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
 			SCI_WRITE(&sci0,strbuff);
+			break;
+		case 'r':
+			//New function: leader reset tempo and key for all boards
+			if(self->mode ==0){
+				//check if leader
+				SCI_WRITE(&sci0,"Reseting BPM and key from master\n");
+				ASYNC(self, send_Reset_msg, 0);
+				SYNC(&controller, change_bpm, 120);
+				SYNC(&controller, change_key, 0);
+			}
+			// if slave: ignore
+			
+			break;
+
+		case 'e':
+			//New function: enable or disable print tempo
+			if(self->mode==0){
+				if(self->print_flag==0){
+					self->print_flag=1;
+					SCI_WRITE(&sci0,"Print tempo function for master is enabled \n");
+					ASYNC(&controller, set_print_flag,1);
+					ASYNC(&controller, print_tempo, 0);
+				}else{
+					SCI_WRITE(&sci0,"Print tempo function for master is disabled \n");
+					self->print_flag=0;
+					ASYNC(&controller, set_print_flag,0);
+				}			
+			}
+			if(self->mode ==1){
+				if(self->print_flag==0){
+					self->print_flag=1;
+					SCI_WRITE(&sci0,"Print mute state function for slave is enabled \n");
+					ASYNC(self,print_mute_state,0);
+				}else{
+					SCI_WRITE(&sci0,"Print mute state function for slave is disabled \n");
+					self->print_flag=0;
+				}	
+			}
+
+			break;
+		case 't':
+			//is slave: when 't' is pressed, toggle the state of mute
+			if(self->mode==1){	
+				ASYNC(&generator,mute,0);
+			}		
 			break;
 			
 	}
