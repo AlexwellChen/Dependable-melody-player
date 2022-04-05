@@ -26,7 +26,6 @@ typedef struct{
 
 Committee committee = { initObject(), -1,0 , -1,INIT};
 
-void committee_recv(){
+void committee_recv(Committee *,  int);
 
-}
 #endif

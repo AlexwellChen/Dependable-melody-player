@@ -212,32 +212,11 @@ void receiver(App* self, int unused)
 	char strbuff[100];
 	snprintf(strbuff,100,"ID: %d\n",msg.msgId);
 	SCI_WRITE(&sci0,strbuff);
-	// First check whether the message is network traversal
-	// if(msg.msgId == 122){
-	// 	if(self->mode == -1){
-	// 		// self->myRank = atoi(msg.buff); // msg.buff carries the current board number detected on the network
-	// 		// // Send msg to next board with msg.buff++
-	// 		self->leaderRank = msg.nodeId;
-	// 		self->mode = 1;
-	// 		ASYNC(self, send_Traversing_ack, 0);
-	// 	}
-	// 	// else{
-	// 	// 	if(self->boardNum == -1){
-	// 	// 		// 1. The message is loop back to leader board.
-	// 	// 		self->boardNum = atoi(msg.buff);
-	// 	// 		ASYNC(self, send_BoardNum_msg, self->boardNum);
-	// 	// 	}else{
-	// 	// 		// 2. Network retraversal because some boards out. Need to test boardNum and myRank
-	// 	// 	}
-	// 	// }
-	// 	return;
-	// }
-
-	//!!! Need to respond when preempting leadership from a slave !!!
-	//if(msg.nodeId != self->leaderRank) return; // Not responding to messages from non-leaders
+	if(msg.msgId>100){
+		ASYNC(&committee,committee_recv,&msg);
+	}
 	int num = 0;
 	if(self->mode){
-			
 		switch(msg.msgId){
 			case 1: 
 				ASYNC(&generator,volume_control,1);
