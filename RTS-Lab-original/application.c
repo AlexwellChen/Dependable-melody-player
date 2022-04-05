@@ -57,13 +57,39 @@ Compile and upload the .s19 file to the experiment board, type "go" to start the
 //#include "globaldef.h"
 #include "Committee.h"
 
-extern App app;
-extern Sound generator;
-extern Controller controller;
-extern Serial sci0;
-extern SysIO sio0;
-extern Can can0;
-extern Committee committee;
+const int myIndex[32]={
+	0,2,4,0,
+	0,2,4,0,
+	4,5,7,
+	4,5,7,
+	7,9,7,5,4,0,
+	7,9,7,5,4,0,
+	0,-5,0,
+	0,-5,0	
+};
+const float periods[25] = {0.00202478, 0.0019111,  0.00180388, 0.00170265, 0.00160705, 0.00151685,
+ 0.00143172, 0.00135139, 0.00127551, 0.00120395, 0.00113636, 0.00107259,
+ 0.00101239, 0.00095557, 0.00090192, 0.00085131, 0.00080354, 0.00075844,
+ 0.00071586, 0.00067568, 0.00063776, 0.00060197, 0.00056818, 0.00053629,
+ 0.00050619};
+
+const int beats[32] = {2,2,2,2,2,
+    2,2,2,2,2,
+    4,2,2,4,1,
+    1,1,1,2,2,
+    1,1,1,1,2,
+    2,2,2,4,2,
+    2,4};
+
+
+App app = { initObject(), 0, 'X', {0},0,-1,0,initTimer(),0,0,0,0,0,-1,-1,-1,-1,0};
+Sound generator = { initObject(), 0,0 , 5,0,1,0,0};
+Controller controller =  { initObject(),0,0,0,120,0,0};
+Serial sci0 = initSerial(SCI_PORT0, &app, reader);
+SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
+Can can0 = initCan(CAN_PORT0, &app, receiver);
+
+Committee committee = { initObject(), -1,0 , -1,INIT};
 
 void check_hold(App *self, int unused){
 	int state = SIO_READ(&sio0);
@@ -455,63 +481,7 @@ void change_bpm(Controller *self, int num){
  * msgid 124: slave try to get leadership, old leader ack with newleader's rank
  */
 
-void send_BoardNum_msg(App* self,int arg){
-	CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------send_BoardNum_msg-------------------------\n");
-	char strbuff[100];
-	snprintf(strbuff,100,"BoardNum: %d \nLeaderRank: %d \nMyRank: %d \n",self->boardNum,self->leaderRank,self->myRank);
-	SCI_WRITE(&sci0,strbuff);
-	msg.nodeId = self->leaderRank;
-	msg.msgId = 126;
-	char str_num[1]; 
-   	sprintf(str_num,"%d", abs(self->boardNum));
-   	msg.length = 1;
-    msg.buff[0] = str_num[0];
-	CAN_SEND(&can0, &msg);
-}
 
-void send_Detecting_msg(App* self,int num){
-	CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------send_Detecting_msg-------------------------\n");
-	char strbuff[100];
-	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
-	SCI_WRITE(&sci0,strbuff);
-	msg.nodeId = self->leaderRank;
-	msg.msgId = 12;
-
-	CAN_SEND(&can0, &msg);
-	SCI_WRITE(&sci0,"CAN message send!\n");
-}
-
-void send_Detecting_ack_msg(App* self,int num){
-	CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------send_Detecting_ack-------------------------\n");
-	char strbuff[100];
-	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
-	SCI_WRITE(&sci0,strbuff);
-	msg.nodeId = self->leaderRank;
-	msg.msgId = 13;
-	CAN_SEND(&can0, &msg);
-	SCI_WRITE(&sci0,"CAN message send!\n");
-}
-
-void send_Reset_msg(App*self, int arg){
-    CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------send_Reset_msg-------------------------\n");
-	//char strbuff[100];
-	//snprintf(strbuff,100,"BoardNum: %d \nLeaderRank: %d \nMyRank: %d \n",self->boardNum,self->leaderRank,self->myRank);
-	//SCI_WRITE(&sci0,strbuff);
-	msg.nodeId = self->leaderRank;
-	msg.msgId = 125;
-	CAN_SEND(&can0, &msg);
-}
-
-void send_Getleadership_msg(App* self ,int arg){
-	CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------Claim for leadership from slave-------------------------\n");
-	msg.nodeId = self->myRank;
-	msg.msgId = 127;
-}
 
 void send_key_msg(App* self,int num){
    

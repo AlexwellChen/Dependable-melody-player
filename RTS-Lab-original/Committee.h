@@ -24,8 +24,11 @@ typedef struct{
     int mode;  //init with -1 
 }Committee;
 
-Committee committee = { initObject(), -1,0 , -1,INIT};
-
 void committee_recv(Committee *,  int);
+void send_Detecting_msg(Committee *, int);
+void send_Detecting_ack_msg(Committee *, int);
+void send_BoardNum_msg(Committee *,int);
+void send_Reset_msg(Committee *, int);
+void send_Getleadership_msg(Committee *,int);
 
 #endif
