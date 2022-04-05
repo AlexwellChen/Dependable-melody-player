@@ -54,8 +54,16 @@ Compile and upload the .s19 file to the experiment board, type "go" to start the
 // #include "sioTinyTimber.h"
 // #include <stdlib.h>
 // #include <stdio.h>
-#include "globaldef.h"
+//#include "globaldef.h"
 #include "Committee.h"
+
+extern App app;
+extern Sound generator;
+extern Controller controller;
+extern Serial sci0;
+extern SysIO sio0;
+extern Can can0;
+extern Committee committee;
 
 void check_hold(App *self, int unused){
 	int state = SIO_READ(&sio0);

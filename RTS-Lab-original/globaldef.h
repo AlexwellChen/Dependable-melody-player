@@ -120,8 +120,8 @@ void change_key(Controller *, int );
 void change_bpm(Controller *, int );
 void print_tempo(Controller *, int );
 
-Serial sci0 = initSerial(SCI_PORT0, &app, reader);
-SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
-Can can0 = initCan(CAN_PORT0, &app, receiver);
+ Serial sci0 = initSerial(SCI_PORT0, &app, reader);
+ SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
+ Can can0 = initCan(CAN_PORT0, &app, receiver);
 
 #endif
