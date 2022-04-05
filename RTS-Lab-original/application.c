@@ -272,8 +272,13 @@ int getMute(Sound* self, int unused){
  * msgId->6: change the negative key msg.buff = new value (buffer size = 1)
  * msgId->7: change the bpm msg.buff = new value (buffer size = 3)
  * msgId->8: reset the key and tempo
+ * msgId->121: Response to detect member.
+ * msgId-122: Detect member in the network.
+ * msgId->123: Declare Leadership.
+ * msgId->124: response to leader requirement.
+ * msgId->125: reset the bpm to 120 and key to 0, nodeid is leader’s rank.
  * msgId->126: send board number in current network
- * msgId->127: Traversing the board on the CAN network. msg.buff = current board number detected, used for myRank
+ * msgId->127: Claim for leadership
  */
 void receiver(App* self, int unused)
 {	
@@ -554,9 +559,9 @@ void send_BoardNum_msg(App* self,int arg){
 	CAN_SEND(&can0, &msg);
 }
 
-void send_Traversing_msg(App* self,int num){
+void send_Detecting_msg(App* self,int num){
 	CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------send_Traversing_msg-------------------------\n");
+	SCI_WRITE(&sci0,"--------------------send_Detecting_msg-------------------------\n");
 	char strbuff[100];
 	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
 	SCI_WRITE(&sci0,strbuff);
@@ -570,9 +575,9 @@ void send_Traversing_msg(App* self,int num){
 	SCI_WRITE(&sci0,"CAN message send!\n");
 }
 
-void send_Traversing_msg(App* self,int num){
+void send_Detecting_ack_msg(App* self,int num){
 	CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------send_Traversing_ack-------------------------\n");
+	SCI_WRITE(&sci0,"--------------------send_Detecting_ack-------------------------\n");
 	char strbuff[100];
 	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
 	SCI_WRITE(&sci0,strbuff);
