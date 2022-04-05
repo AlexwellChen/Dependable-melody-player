@@ -116,8 +116,10 @@ int getLeaderRank(App*, int);
 int getBoardNum(App*, int);
 void three_history(App *,Time);
 void send_Traversing_msg(App*, int);
+void send_Traversing_ack(App*, int);
 void send_BoardNum_msg(App*,int);
 void send_Reset_msg(App*, int);
+void send_Getleadership_msg(App*,int);
 void startSound(Controller* , int);
 void mute (Sound* );
 void volume_control (Sound* , int );
@@ -214,6 +216,10 @@ void user_call_back(App *self, int unused){
 			char WCET[200];
 			snprintf(WCET,200,"Hold time is %ld sec, %ld msec, %ld usec  \n",sec,msec,usec);
 			SCI_WRITE(&sci0,WCET);
+			if(diff>SEC(5)){
+				//slave get leadership
+				ASYNC(self, send_Getleadership_msg, 0);
+			}else
 			if(diff>SEC(2)){
 				SCI_WRITE(&sci0,"Reset bpm to 120\n");
 				// int bpm = 120;
@@ -235,10 +241,13 @@ void user_call_back(App *self, int unused){
 }
 
 void initNetwork(App* self, int unused){
-	self->boardNum = -1;
+	//Self init always have one board
+	self->boardNum = 1;
 	self->mode = -1;
 	self->leaderRank = -1;
-	self->myRank = -1;
+
+	//Initialize our rank as 0
+	self->myRank = 0;
 }
 
 
@@ -276,25 +285,28 @@ void receiver(App* self, int unused)
 	snprintf(strbuff,100,"ID: %d\n",msg.msgId);
 	SCI_WRITE(&sci0,strbuff);
 	// First check whether the message is network traversal
-	if(msg.msgId == 127){
-		if(self->myRank == -1){
-			self->myRank = atoi(msg.buff); // msg.buff carries the current board number detected on the network
-			// Send msg to next board with msg.buff++
-			self->leaderRank = msg.nodeId;
-			ASYNC(self, send_Traversing_msg, self->myRank+1);
-		}else{
-			if(self->boardNum == -1){
-				// 1. The message is loop back to leader board.
-				self->boardNum = atoi(msg.buff);
-				ASYNC(self, send_BoardNum_msg, self->boardNum);
-			}else{
-				// 2. Network retraversal because some boards out. Need to test boardNum and myRank
-			}
-		}
-		return;
-	}
+	// if(msg.msgId == 122){
+	// 	if(self->mode == -1){
+	// 		// self->myRank = atoi(msg.buff); // msg.buff carries the current board number detected on the network
+	// 		// // Send msg to next board with msg.buff++
+	// 		self->leaderRank = msg.nodeId;
+	// 		self->mode = 1;
+	// 		ASYNC(self, send_Traversing_ack, 0);
+	// 	}
+	// 	// else{
+	// 	// 	if(self->boardNum == -1){
+	// 	// 		// 1. The message is loop back to leader board.
+	// 	// 		self->boardNum = atoi(msg.buff);
+	// 	// 		ASYNC(self, send_BoardNum_msg, self->boardNum);
+	// 	// 	}else{
+	// 	// 		// 2. Network retraversal because some boards out. Need to test boardNum and myRank
+	// 	// 	}
+	// 	// }
+	// 	return;
+	// }
 
-	if(msg.nodeId != self->leaderRank) return; // Not responding to messages from non-leaders
+	//!!! Need to respond when preempting leadership from a slave !!!
+	//if(msg.nodeId != self->leaderRank) return; // Not responding to messages from non-leaders
 	int num = 0;
 	if(self->mode){
 			
@@ -329,10 +341,22 @@ void receiver(App* self, int unused)
 			case 8:
 				SYNC(&controller, change_bpm, 120);
 				SYNC(&controller, change_key, 0);
-			case 126:
-				num = atoi(msg.buff);
-				self->boardNum = num;
-				SYNC(self, send_BoardNum_msg, num);
+
+			case 121:
+				self->boardNum ++;
+				break;
+			case 122:
+				if(self->mode == -1){
+					self->leaderRank = msg.nodeId;
+					self->mode = 1;
+					ASYNC(self, send_Traversing_ack, 0);
+				}
+				break;
+			case 124:
+				//for leader: get a request from slave requesting leadership#pragma endregion
+				//may have two request from different slaves
+				int new_leader = msg.nodeId;
+				//TODO: How to handle two requests
 				break;
 			case 125:
 				//for slaves:
@@ -341,7 +365,20 @@ void receiver(App* self, int unused)
 					ASYNC(&controller, set_print_flag,1);
 					ASYNC(&controller, print_tempo, 0);
 					SYNC(self, send_Reset_msg,0);
-				}		
+				}
+				break;
+			case 126:
+				num = atoi(msg.buff);
+				self->boardNum = num;
+				//No need to forward the msg anymore
+				// SYNC(self, send_BoardNum_msg, num);
+				break;
+			case 127:
+				
+			
+			
+
+			default: break;
 		}
 	}
 }
@@ -499,9 +536,10 @@ void change_bpm(Controller *self, int num){
  * msgId 126: send the board number in the network. msg.buff = boardNum(buffer size = 2)
  * msgId 127: Traversing the board on the CAN network. msg.buff = current board number detected, used for myRank
  * 	msgid 125: reset the bpm to 120 and key to 0, nodeid is leader's rank
+ * msgid 124: slave try to get leadership, old leader ack with newleader's rank
  */
 
-void send_BoardNum_msg(App* self,int num){
+void send_BoardNum_msg(App* self,int arg){
 	CANMsg msg;
 	SCI_WRITE(&sci0,"--------------------send_BoardNum_msg-------------------------\n");
 	char strbuff[100];
@@ -510,7 +548,7 @@ void send_BoardNum_msg(App* self,int num){
 	msg.nodeId = self->leaderRank;
 	msg.msgId = 126;
 	char str_num[1]; 
-   	sprintf(str_num,"%d", abs(num));
+   	sprintf(str_num,"%d", abs(self->boardNum));
    	msg.length = 1;
     msg.buff[0] = str_num[0];
 	CAN_SEND(&can0, &msg);
@@ -523,16 +561,28 @@ void send_Traversing_msg(App* self,int num){
 	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
 	SCI_WRITE(&sci0,strbuff);
 	msg.nodeId = self->leaderRank;
-	msg.msgId = 127;
-	char str_num[1]; 
-   	sprintf(str_num,"%d", abs(num));
-   	msg.length = 1;
-    msg.buff[0] = str_num[0];
+	msg.msgId = 122;
+	// char str_num[1]; 
+   	// sprintf(str_num,"%d", abs(num));
+   	// msg.length = 1;
+    // msg.buff[0] = str_num[0];
 	CAN_SEND(&can0, &msg);
 	SCI_WRITE(&sci0,"CAN message send!\n");
 }
 
-void send_Reset_msg(App*self, int unused){
+void send_Traversing_msg(App* self,int num){
+	CANMsg msg;
+	SCI_WRITE(&sci0,"--------------------send_Traversing_ack-------------------------\n");
+	char strbuff[100];
+	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
+	SCI_WRITE(&sci0,strbuff);
+	msg.nodeId = self->leaderRank;
+	msg.msgId = 121;
+	CAN_SEND(&can0, &msg);
+	SCI_WRITE(&sci0,"CAN message send!\n");
+}
+
+void send_Reset_msg(App*self, int arg){
     CANMsg msg;
 	SCI_WRITE(&sci0,"--------------------send_Reset_msg-------------------------\n");
 	//char strbuff[100];
@@ -541,6 +591,14 @@ void send_Reset_msg(App*self, int unused){
 	msg.nodeId = self->leaderRank;
 	msg.msgId = 125;
 	CAN_SEND(&can0, &msg);
+}
+
+void send_Getleadership_msg(App* self ,int arg){
+	CANMsg msg;
+	SCI_WRITE(&sci0,"--------------------Claim for leadership from slave-------------------------\n");
+	CANMsg msg;
+	msg.nodeId = self->myRank;
+	msg.msgId = 127;
 }
 
 void send_key_msg(App* self,int num){
@@ -611,9 +669,13 @@ void reader(App* self, int c)
 				char strbuff[100];
 				snprintf(strbuff,100,"Mode: %d\n",self->mode);
 				SCI_WRITE(&sci0,strbuff);
-	
-				ASYNC(self, send_Traversing_msg, 1);
+				//detect members in the network
+				ASYNC(self, send_Traversing_msg, 0);
 				SCI_WRITE(&sci0, "Traversing msg send!\n");
+
+				//after one second, collect the board number and send to slaves
+				AFTER(SEC(1),self, send_BoardNum_msg,0);
+				SCI_WRITE(&sci0, "Broadcasting number msg to slaves!\n");
 			}else if(self->mode == 0){
 				// no sense
 				SCI_WRITE(&sci0, "You are in master mode!\n");
@@ -687,24 +749,18 @@ void reader(App* self, int c)
 			msg.msgId = 2;
 			msg.nodeId = 0;
 			msg.length = 0;
-			CAN_SEND(&can0, &msg);
-			
+			CAN_SEND(&can0, &msg);	
 			break;
 		case 'm':
 			//mute(&generator);
-			if(!self->mode)
+			if(self->mode==1){
 				ASYNC(&generator,mute,0);
-		
-			
+
+			}
 			msg.msgId = 3;
 			msg.nodeId = 0;
 			msg.length = 0;
 			CAN_SEND(&can0, &msg);
-			
-			
-			break;
-		case 'd':
-			ASYNC(&generator,deadline_control_sound,0);
 			break;
 		case 'p':
 			if(!self->mode){
@@ -765,12 +821,22 @@ void reader(App* self, int c)
 			//is slave: when 't' is pressed, toggle the state of mute
 			if(self->mode==1){	
 				ASYNC(&generator,mute,0);
+				ASYNC(self,print_mute_state,0);
 			}		
 			break;
+
+		//Function: Compulsory leadership change
+		case 'l':
+			if(self->mode==1){
+				//board was originally slave
+				ASYNC(self, send_Getleadership_msg, 0);
+			}
+
 			
 	}
 	if ((c >='0'&&c<='9') || (self->count==0 && c == '-')){
 		self->c[self->count++] = c;
+
 	}
 	
 }
