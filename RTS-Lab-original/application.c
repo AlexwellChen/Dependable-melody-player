@@ -88,8 +88,7 @@ Controller controller =  { initObject(),0,0,0,120,0,0};
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
 Can can0 = initCan(CAN_PORT0, &app, receiver);
-
-Committee committee = { initObject(), -1,0 , -1,INIT};
+extern Committee committee;
 
 void check_hold(App *self, int unused){
 	int state = SIO_READ(&sio0);
@@ -245,7 +244,7 @@ void receiver(App* self, int unused)
 	SCI_WRITE(&sci0, "Can msg received: \n");
 	char strbuff[100];
 	snprintf(strbuff,100,"ID: %d\n",msg.msgId);
-	SCI_WRITE(&sci0,strbuff);
+	SCI_WRITE(&sci0,msg.msgId);
 	if(msg.msgId>100){
 		ASYNC(&committee,committee_recv,&msg);
 	}
@@ -287,11 +286,7 @@ void receiver(App* self, int unused)
 				self->boardNum ++;
 				break;
 			case 122:
-				if(self->mode == -1){
-					self->leaderRank = msg.nodeId;
-					self->mode = 1;
-					ASYNC(self, send_Detecting_ack_msg, 0);
-				}
+			
 				break;
 			case 124:
 				//for leader: get a request from slave requesting leadership#pragma endregion
@@ -548,16 +543,7 @@ void reader(App* self, int c)
 				self->myRank = 0;
 				self->leaderRank = 0;
 				
-				char strbuff[100];
-				snprintf(strbuff,100,"Mode: %d\n",self->mode);
-				SCI_WRITE(&sci0,strbuff);
-				//detect members in the network
-				ASYNC(self, send_Detecting_msg, 0);
-				SCI_WRITE(&sci0, "Traversing msg send!\n");
-
-				//after one second, collect the board number and send to slaves
-				AFTER(SEC(1),self, send_BoardNum_msg,0);
-				SCI_WRITE(&sci0, "Broadcasting number msg to slaves!\n");
+				
 			}else if(self->mode == 0){
 				// no sense
 				SCI_WRITE(&sci0, "You are in master mode!\n");
@@ -725,10 +711,10 @@ void reader(App* self, int c)
 
 void startApp(App* self, int arg)
 {
-    CANMsg msg;
-	Serial sci0 = initSerial(SCI_PORT0, &app, reader);
-	SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
-	Can can0 = initCan(CAN_PORT0, &app, receiver);
+    // CANMsg msg;
+	// Serial sci0 = initSerial(SCI_PORT0, &app, reader);
+	// SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
+	// Can can0 = initCan(CAN_PORT0, &app, receiver);
     CAN_INIT(&can0);
     SCI_INIT(&sci0);
 	SIO_INIT(&sio0);
@@ -754,7 +740,15 @@ void startApp(App* self, int arg)
     msg.buff[4] = 'o';
     msg.buff[5] = 0;
     CAN_SEND(&can0, &msg);
+	snprintf(strbuff,100,"Mode: %d\n",self->mode);
+	SCI_WRITE(&sci0,strbuff);
+	//detect members in the network
+	ASYNC(&committee, send_Detecting_msg, 0);
+	SCI_WRITE(&sci0, "send_Detecting_msg send!\n");
 
+	//after one second, collect the board number and send to slaves
+	AFTER(SEC(2),&committee, send_BoardNum_msg,0);
+	SCI_WRITE(&sci0, "Broadcasting number msg to slaves!\n");
 	ASYNC(&controller,startSound,0);
 	ASYNC(&generator, play,0);
 }
