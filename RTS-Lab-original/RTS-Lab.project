@@ -52,7 +52,11 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
-    <File Name="periods.h"/>
+    <File Name="globaldef.h"/>
+    <File Name="Watchdog.h"/>
+    <File Name="Watchdog.c"/>
+    <File Name="Committee.h"/>
+    <File Name="Committee.c"/>
     <File Name="sioTinyTimber.h"/>
     <File Name="sioTinyTimber.c"/>
     <File Name="application.c" ExcludeProjConfig=""/>

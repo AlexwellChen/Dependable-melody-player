@@ -48,91 +48,14 @@ Compile and upload the .s19 file to the experiment board, type "go" to start the
  - In the serial momentary presses with user button new bpm is set.
 
 */
-#include "TinyTimber.h"
-#include "sciTinyTimber.h"
-#include "canTinyTimber.h"
-#include "sioTinyTimber.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include "periods.h"
-
-#define DAC_port ((volatile unsigned char*) 0x4000741C)
-typedef struct {
-    Object super;
-    int count;
-    char c[100];
-    Time nums[3];
-    int nums_count ;
-	int mode;
-	//-1 is init, 0 is master, 1 is slave
-	int press_mode;
-	Timer timer;
-	int bounce;
-	int momentary;
-	Time previous_time;
-	int trigmode;
-	int inteval;
-	int boardNum; // init with -1
-	int myRank; // init with -1
-	int leaderRank; // init with -1
-	int print_flag;
-} App;
-
-typedef struct {
-    Object super;
-    int play;
-	int key;
-	int note;
-    int bpm;
-	int change_bpm_flag;
-	int print_flag;
-} Controller;
-
-/* Application class for sound generator
-*  flag: whether to write 0 or 1 to the DAC port
-* volumn: the current output volumn for sound generator
-* pre_volumn: keeps the previous volumn before muted
-* deadline_enabled: the deadline enabled state, 0 for false(disabled) 1 for true(enabled)
-*/
-typedef struct {
-    Object super;
-	int play;
-	int flag;
-	int volumn;
-	int prev_volumn;
-	int  deadline_enabled;
-    int gap;
-    int period;
-}Sound;
-
-App app = { initObject(), 0, 'X', {0},0,-1,0,initTimer(),0,0,0,0,0,-1,-1,-1,-1,0};
-Sound generator = { initObject(), 0,0 , 5,0,1,0,0};
-Controller controller =  { initObject(),0,0,0,120,0,0};
-void reader(App*, int);
-void receiver(App*, int);
-void user_call_back(App*, int);
-int getMyRank(App*, int);
-int getLeaderRank(App*, int);
-int getBoardNum(App*, int);
-void three_history(App *,Time);
-void send_Traversing_msg(App*, int);
-void send_Traversing_ack(App*, int);
-void send_BoardNum_msg(App*,int);
-void send_Reset_msg(App*, int);
-void send_Getleadership_msg(App*,int);
-void startSound(Controller* , int);
-void mute (Sound* );
-void volume_control (Sound* , int );
-void pause(Sound *, int );
-void pause_c(Controller *, int );
-void set_print_flag(Controller*, int);
-void change_key(Controller *, int );
-void change_bpm(Controller *, int );
-void print_tempo(Controller *, int );
-
-Serial sci0 = initSerial(SCI_PORT0, &app, reader);
-SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
-Can can0 = initCan(CAN_PORT0, &app, receiver);
+// #include "TinyTimber.h"
+// #include "sciTinyTimber.h"
+// #include "canTinyTimber.h"
+// #include "sioTinyTimber.h"
+// #include <stdlib.h>
+// #include <stdio.h>
+#include "globaldef.h"
+#include "Committee.h"
 
 void check_hold(App *self, int unused){
 	int state = SIO_READ(&sio0);
@@ -354,13 +277,14 @@ void receiver(App* self, int unused)
 				if(self->mode == -1){
 					self->leaderRank = msg.nodeId;
 					self->mode = 1;
-					ASYNC(self, send_Traversing_ack, 0);
+					ASYNC(self, send_Detecting_ack_msg, 0);
 				}
 				break;
 			case 124:
 				//for leader: get a request from slave requesting leadership#pragma endregion
 				//may have two request from different slaves
-				int new_leader = msg.nodeId;
+				//int new_leader;
+                //new_leader = msg.nodeId;
 				//TODO: How to handle two requests
 				break;
 			case 125:
@@ -566,11 +490,8 @@ void send_Detecting_msg(App* self,int num){
 	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
 	SCI_WRITE(&sci0,strbuff);
 	msg.nodeId = self->leaderRank;
-	msg.msgId = 122;
-	// char str_num[1]; 
-   	// sprintf(str_num,"%d", abs(num));
-   	// msg.length = 1;
-    // msg.buff[0] = str_num[0];
+	msg.msgId = 12;
+
 	CAN_SEND(&can0, &msg);
 	SCI_WRITE(&sci0,"CAN message send!\n");
 }
@@ -582,7 +503,7 @@ void send_Detecting_ack_msg(App* self,int num){
 	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
 	SCI_WRITE(&sci0,strbuff);
 	msg.nodeId = self->leaderRank;
-	msg.msgId = 121;
+	msg.msgId = 13;
 	CAN_SEND(&can0, &msg);
 	SCI_WRITE(&sci0,"CAN message send!\n");
 }
@@ -601,7 +522,6 @@ void send_Reset_msg(App*self, int arg){
 void send_Getleadership_msg(App* self ,int arg){
 	CANMsg msg;
 	SCI_WRITE(&sci0,"--------------------Claim for leadership from slave-------------------------\n");
-	CANMsg msg;
 	msg.nodeId = self->myRank;
 	msg.msgId = 127;
 }
@@ -675,7 +595,7 @@ void reader(App* self, int c)
 				snprintf(strbuff,100,"Mode: %d\n",self->mode);
 				SCI_WRITE(&sci0,strbuff);
 				//detect members in the network
-				ASYNC(self, send_Traversing_msg, 0);
+				ASYNC(self, send_Detecting_msg, 0);
 				SCI_WRITE(&sci0, "Traversing msg send!\n");
 
 				//after one second, collect the board number and send to slaves
