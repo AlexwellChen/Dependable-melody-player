@@ -5,38 +5,6 @@ This music player is based on the implementation of the EDA223 project, the main
 
 ## The protocol
 
-msgId 1: increase the volumn
-
-msgId 2: decrease the volumn
-
-msgId 3: mute the melody
-
-msgId 4: pause the melody
-
-msgId 5: change the positive key msg.buff = new value (buffer size = 1)
-
-msgId 6: change the negative key msg.buff = new value (buffer size = 1)
-
-msgId 7: change the bpm msg.buff = new value (buffer size = 3)
-
-msgId 8: reset the key and tempo
-
-<s>msgId 121: Response to detect member.</s>
-
-We might use msgId 121 later.
-
-msgId 122: Detect member in the network.
-
-msgId 123: Declare Leadership.
-
-msgId 124: response to leader requirement. msg.nodeId = leader's rank, msg.buff=myRank
-
-msgId 125: reset the bpm to 120 and key to 0, nodeid is leader's rank.
-
-msgId 126: send board number in current network. msg.buff = number of board
-
-msgId 127: Claim for leadership. msg.nodeId = myRank.
-
 | msgId      | msg.nodeId | msg.buff | Usage | State |
 | ----------- | ----------- | ----------- | ----------- | ----------- |
 | 1 | NaN | NaN | Increase the volum | Master |
