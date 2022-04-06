@@ -174,7 +174,7 @@ void user_call_back(App *self, int unused){
 			SCI_WRITE(&sci0,WCET);
 			if(diff>SEC(5)){
 				//slave get leadership
-				ASYNC(self, send_Getleadership_msg, 0);
+				ASYNC(self, send_GetLeadership_msg, 0);
 			}else
 			if(diff>SEC(2)){
 				SCI_WRITE(&sci0,"Reset bpm to 120\n");
@@ -530,43 +530,14 @@ void reader(App* self, int c)
 	 SCI_WRITECHAR(&sci0, c);
      SCI_WRITE(&sci0, "\'\n");
 	 char strbuff[100];
-	 if(self->mode == -1){
-		 SCI_WRITE(&sci0, "Type 'o' to enter master mode.\n");
-	 }
 	 int num;
 	 CANMsg msg;
-	 if(c =='o'){
-			if(self->mode == -1){
-				// winner
-				SCI_WRITE(&sci0,"Winner\n");
-				self->mode = 0; // enter master mode
-				self->myRank = 0;
-				self->leaderRank = 0;
-				
-				
-			}else if(self->mode == 0){
-				// no sense
-				SCI_WRITE(&sci0, "You are in master mode!\n");
-				char strbuff[100];
-				snprintf(strbuff,100,"Mode: %d\n",self->mode);
-				SCI_WRITE(&sci0,strbuff);
-			}else{
-				// loser
-				SCI_WRITE(&sci0, "You are in slave mode!\n");
-				char strbuff[100];
-				snprintf(strbuff,100,"Mode: %d\n",self->mode);
-				SCI_WRITE(&sci0,strbuff);
-			}
-			// if(self->mode){
-			// 	// mode == 1 -> slave mode
-			// 	SCI_WRITE(&sci0, "In slave mode\n");
-			// } else{
-			// 	// mode == 0 -> slave mode
-			// 	SCI_WRITE(&sci0, "In master mode\n");
-			// }
-	}
-	
+
 	switch(c) {
+		case 'o':
+			ASYNC(&committee,I_to_W,0);
+			AFTER(SEC(1),&committee,send_GetLeadership_msg,0);
+			break;
 		case 'k':
 			
 			self->c[self->count] = '\0';
@@ -694,12 +665,7 @@ void reader(App* self, int c)
 			break;
 
 		//Function: Compulsory leadership change
-		case 'l':
-			if(self->mode==1){
-				//board was originally slave
-				ASYNC(self, send_Getleadership_msg, 0);
-			}
-
+		
 			
 	}
 	if ((c >='0'&&c<='9') || (self->count==0 && c == '-')){
@@ -711,7 +677,7 @@ void reader(App* self, int c)
 
 void startApp(App* self, int arg)
 {
-    // CANMsg msg;
+    CANMsg msg;
 	// Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 	// SysIO sio0 = initSysIO(SIO_PORT0, &app,user_call_back);
 	// Can can0 = initCan(CAN_PORT0, &app, receiver);
@@ -726,9 +692,9 @@ void startApp(App* self, int arg)
 	initNetwork(self, 0);
 //	SYNC(self, initNetwork, 0);
 	SCI_WRITE(&sci0,"--------------------startApp-------------------------\n");
-	char strbuff[100];
-	snprintf(strbuff,100,"start App Mode: %d\nboardNum: %d\nmyRank: %d\nleaderRank: %d\n",self->mode, self->boardNum, self->myRank, self->leaderRank);
-	SCI_WRITE(&sci0,strbuff);
+	 char strbuff[100];
+	// snprintf(strbuff,100,"start App Mode: %d\nboardNum: %d\nmyRank: %d\nleaderRank: %d\n",self->mode, self->boardNum, self->myRank, self->leaderRank);
+	// SCI_WRITE(&sci0,strbuff);
 //	self->mode = -1;
     msg.msgId = 1;
     msg.nodeId = 1;
@@ -749,6 +715,8 @@ void startApp(App* self, int arg)
 	//after one second, collect the board number and send to slaves
 	AFTER(SEC(2),&committee, send_BoardNum_msg,0);
 	SCI_WRITE(&sci0, "Broadcasting number msg to slaves!\n");
+	SCI_WRITE(&sci0, "Ready for competing for leadership\n");
+	
 	ASYNC(&controller,startSound,0);
 	ASYNC(&generator, play,0);
 }

@@ -29,6 +29,8 @@ void send_Detecting_msg(Committee *, int);
 // void send_Detecting_ack_msg(Committee *, int);
 void send_BoardNum_msg(Committee *,int);
 void send_Reset_msg(Committee *, int);
-void send_Getleadership_msg(Committee *,int);
-
+void send_GetLeadership_msg(Committee *,int);
+void send_DeclareLeader_msg(Committee *,int);
+void send_ResponseLeadership_msg (Committee *,int);
+void I_to_W (Committee *,int);
 #endif
