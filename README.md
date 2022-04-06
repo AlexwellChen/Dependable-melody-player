@@ -3,6 +3,60 @@
 ## The basic idea
 This music player is based on the implementation of the EDA223 project, the main goal is to add the CAN network communication protocol to the original project, to achieve a reliable boards network. All the boards connected to the network can play music in a round robin way, and can exchange leadership between the boards (The committee). The network can also detect The network can also detect the loss of members, which is divided into Master Failure and Slave Failure (The watchdog).
 
+## The protocol
+
+msgId 1: increase the volumn
+
+msgId 2: decrease the volumn
+
+msgId 3: mute the melody
+
+msgId 4: pause the melody
+
+msgId 5: change the positive key msg.buff = new value (buffer size = 1)
+
+msgId 6: change the negative key msg.buff = new value (buffer size = 1)
+
+msgId 7: change the bpm msg.buff = new value (buffer size = 3)
+
+msgId 8: reset the key and tempo
+
+<s>msgId 121: Response to detect member.</s>
+
+We might use msgId 121 later.
+
+msgId 122: Detect member in the network.
+
+msgId 123: Declare Leadership.
+
+msgId 124: response to leader requirement. msg.nodeId = leader's rank, msg.buff=myRank
+
+msgId 125: reset the bpm to 120 and key to 0, nodeid is leader's rank.
+
+msgId 126: send board number in current network. msg.buff = number of board
+
+msgId 127: Claim for leadership. msg.nodeId = myRank.
+
+| msgId      | msg.nodeId | msg.buff | Usage | State |
+| ----------- | ----------- | ----------- | ----------- | ----------- |
+| 1 | NaN | NaN | Increase the volum | Master |
+| 2 | NaN | NaN | Decrease the volum | Master |
+| 3 | NaN | NaN | Mute the melody | Master |
+| 4 | NaN | NaN | Pause the melody | Master |
+| 5 | NaN | New value, size = 1 | Change the positive key | Master |
+| 6 | NaN | New value, size = 1 | Change the negative key | Master |
+| 7 | NaN | New value, size = 3 | Change the bpm | Master |
+| 8 | NaN | NaN | Reset the key and tempo | Master |
+| 122 | NaN | NaN | Detect member in the network | Init |
+| 123 | myRank | NaN | Declare Leadership | Init->Waiting |
+| 124 | leaderRank | myRank | Response to leader Claim | Init |
+| 125 | leaderRank | NaN | Reset the bpm and key | Master |
+| 126 | myRank | boardNum | Send board number in current network | Init |
+| 127 | myRank | NaN | Claim for leadership | Waiting->Master |
+
+
+
+
 ## Establish the network
 The network is built based on the following processes.
 
@@ -33,7 +87,7 @@ In this step we start initializing the state machine.
 
 First all boards should have an initial state of **Init**, which means a new member of the network (or a Master waiting to hand over leadership).
 
-When we send msgId 127, we enter the Waiting state, in which we need to create an array flag, the length of which is the number of current members. flag[myRank] is initialized to 1 (we need to acknowledge our leadership ourselves), and whenever we receive a msgId 124, we make flag[msg. nodeId] = 1 and after each receipt we need to check if the current array is all 1s.
+When we send msgId 127, we enter the Waiting state, in which we need to create an array flag, the length of which is the number of current members. flag[myRank] is initialized to 1 (we need to acknowledge our leadership ourselves), and whenever we receive a msgId 124, we make flag[msg. buff] = 1 and after each receipt we need to check if the current array is all 1s.
 
 If all of them are 1 then it proves that everyone acknowledges our leadership and we can go to Master and send msgId 123 to declare our leadership.
 
