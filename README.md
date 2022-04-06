@@ -17,8 +17,8 @@ This music player is based on the implementation of the EDA223 project, the main
 | 8 | myRank | NaN | Reset the key and tempo | Master |
 | 122 | myRank | NaN | Detect member in the network | Init |
 | 123 | myRank | NaN | Declare Leadership | Init->Waiting |
-| 124 | Rank from msgId 127 | myRank | Response to leader Claim | Init |
-| 125 | leaderRank | NaN | Reset the bpm and key | Master |
+| 124 | myRank | Rank from msgId 127 | Response to leader claim | Init |
+| 125 | myRank | NaN | Reset the bpm and key | Master |
 | 126 | myRank | boardNum | Send board number in current network | Init |
 | 127 | myRank | NaN | Claim for leadership | Waiting->Master |
 
