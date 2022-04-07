@@ -18,7 +18,7 @@ void committee_recv(Committee * self,  int addr){
         case INIT:
             switch(msg.msgId){
                 case 122:{
-					 SCI_WRITE(&sci0,"----------------Recv msgId 122---------------------\n");
+					SCI_WRITE(&sci0,"----------------Recv msgId 122---------------------\n");
                     self->boardNum++;
                     break;
 				}
@@ -73,7 +73,7 @@ void send_BoardNum_msg(Committee* self,int arg){
 	CANMsg msg;
 	SCI_WRITE(&sci0,"--------------------send_BoardNum_msg-------------------------\n");
 	char strbuff[100];
-	snprintf(strbuff,100,"BoardNum: %d \nLeaderRank: %d \nMyRank: %d \n",self->boardNum,self->leaderRank,self->myRank);
+	snprintf(strbuff,100,"BoardNum: %d \nMyRank: %d \n", self->boardNum, self->myRank);
 	SCI_WRITE(&sci0,strbuff);
 	msg.nodeId = self->myRank;
 	msg.msgId = 126;
@@ -128,7 +128,7 @@ void send_DeclareLeader_msg(Committee *self ,int arg){
 }
 void send_GetLeadership_msg(Committee* self ,int arg){
 	CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------Leadership compete-------------------------\n");
+	SCI_WRITE(&sci0,"--------------------Claim for Leadership-------------------------\n");
 	msg.nodeId = self->myRank;
 	msg.msgId = 127;
     CAN_SEND(&can0, &msg);
@@ -150,3 +150,13 @@ void I_to_W (Committee * self ,int arg){
     self -> mode = WAITING;
 }
 
+void initBoardNum(Committee *self, int unused){
+    ASYNC(&committee, send_Detecting_msg, 0); // msgId 122
+	SCI_WRITE(&sci0, "send_Detecting_msg send!\n");
+	//after two second, collect the board number and send to slaves
+	AFTER(SEC(2),&committee, send_BoardNum_msg,0); // msgId 126
+}
+
+void initMode(Committee *self,int unused){
+
+}

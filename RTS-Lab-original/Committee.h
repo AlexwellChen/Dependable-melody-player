@@ -19,9 +19,9 @@
 typedef struct{
     Object super;
    	int boardNum; // init with 1
-	int myRank; // init with -1
+	int myRank; // init by user
 	int leaderRank; // init with -1
-    int mode;  //init with -1 
+    int mode;  //init with INIT
 }Committee;
 
 void committee_recv(Committee *,  int);
@@ -33,4 +33,6 @@ void send_GetLeadership_msg(Committee *,int);
 void send_DeclareLeader_msg(Committee *,int);
 void send_ResponseLeadership_msg (Committee *,int);
 void I_to_W (Committee *,int);
+void initBoardNum(Committee *,int);
+void initMode(Committee *,int);
 #endif

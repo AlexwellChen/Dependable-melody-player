@@ -709,16 +709,12 @@ void startApp(App* self, int arg)
 	snprintf(strbuff,100,"Mode: %d\n",self->mode);
 	SCI_WRITE(&sci0,strbuff);
 	//detect members in the network
-	ASYNC(&committee, send_Detecting_msg, 0);
-	SCI_WRITE(&sci0, "send_Detecting_msg send!\n");
-
-	//after one second, collect the board number and send to slaves
-	AFTER(SEC(2),&committee, send_BoardNum_msg,0);
-	SCI_WRITE(&sci0, "Broadcasting number msg to slaves!\n");
+	ASYNC(&committee, initBoardNum, 0);
 	SCI_WRITE(&sci0, "Ready for competing for leadership\n");
-	
-	ASYNC(&controller,startSound,0);
-	ASYNC(&generator, play,0);
+	AFTER(SEC(3), &committee, initMode, 0);
+
+	// ASYNC(&controller,startSound,0);
+	// ASYNC(&generator, play,0);
 }
 
 int main()
