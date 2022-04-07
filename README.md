@@ -15,12 +15,13 @@ This music player is based on the implementation of the EDA223 project, the main
 | 6 | myRank | New value, size = 1 | Change the negative key | Master |
 | 7 | myRank | New value, size = 3 | Change the bpm | Master |
 | 8 | myRank | NaN | Reset the key and tempo | Master |
+| 9 | myRank | Note ID | Boardcast current note | Master |
 | 122 | myRank | NaN | Detect member in the network | Init |
-| 123 | myRank | NaN | Declare Leadership | Init->Waiting |
+| 123 | myRank | NaN | Declare Leadership | Waiting->Master |
 | 124 | myRank | Rank from msgId 127 | Response to leader claim | Init |
 | 125 | myRank | NaN | Reset the bpm and key | Master |
 | 126 | myRank | boardNum | Send board number in current network | Init |
-| 127 | myRank | NaN | Claim for leadership | Waiting->Master |
+| 127 | myRank | NaN | Claim for leadership | Init->Waiting |
 
 ## Establish the network
 The network is built based on the following processes.
