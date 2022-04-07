@@ -7,7 +7,7 @@ extern Serial sci0;
 extern SysIO sio0;
 extern Can can0;
 
-Committee committee = { initObject(), 1,0 , -1,INIT};
+Committee committee = { initObject(), 1,0 , -1,INIT,1};
 
 void committee_recv(Committee * self,  int addr){
     CANMsg msg = *(CANMsg *) addr;
@@ -52,10 +52,8 @@ void committee_recv(Committee * self,  int addr){
                 case 127:{
                    if(msg.nodeId>self->myRank){
                        //compete fail return to init state
-                       self->mode = INIT;
-                   }else{
-                       self->mode = MASTER;
-                       ASYNC(self, send_DeclareLeader_msg,0);
+                      // self->mode = INIT;
+                      self->isLeader = 0;
                    }
                     break;
                 }
@@ -149,7 +147,16 @@ void send_ResponseLeadership_msg (Committee *self ,int nodeId){
 void I_to_W (Committee * self ,int arg){
     self -> mode = WAITING;
 }
-
+void change_StateAfterCompete(Committee *self,int arg){
+    if(self->isLeader){
+        self->mode = MASTER;
+        ASYNC(self, send_DeclareLeader_msg,0);
+    }else{
+        self->mode = INIT;
+    }
+    //Reset before exit
+    self->isLeader = 1;
+}
 void initBoardNum(Committee *self, int unused){
     ASYNC(&committee, send_Detecting_msg, 0); // msgId 122
 	SCI_WRITE(&sci0, "send_Detecting_msg send!\n");

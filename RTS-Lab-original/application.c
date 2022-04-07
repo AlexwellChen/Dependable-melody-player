@@ -536,7 +536,8 @@ void reader(App* self, int c)
 	switch(c) {
 		case 'o':
 			ASYNC(&committee,I_to_W,0);
-			AFTER(SEC(1),&committee,send_GetLeadership_msg,0);
+			AFTER(MSEC(500),&committee,send_GetLeadership_msg,0);
+			AFTER(SEC(1),&committee,change_StateAfterCompete,0);
 			break;
 		case 'k':
 			

@@ -22,6 +22,7 @@ typedef struct{
 	int myRank; // init by user
 	int leaderRank; // init with -1
     int mode;  //init with INIT
+	int isLeader;
 }Committee;
 
 void committee_recv(Committee *,  int);
@@ -35,4 +36,5 @@ void send_ResponseLeadership_msg (Committee *,int);
 void I_to_W (Committee *,int);
 void initBoardNum(Committee *,int);
 void initMode(Committee *,int);
+void change_StateAfterCompete (Committee *,int);
 #endif
