@@ -33,7 +33,7 @@ void send_Reset_msg(Committee *, int);
 void send_GetLeadership_msg(Committee *,int);
 void send_DeclareLeader_msg(Committee *,int);
 void send_ResponseLeadership_msg (Committee *,int);
-void I_to_W (Committee *,int);
+void IorS_to_W (Committee *,int);
 void initBoardNum(Committee *,int);
 void initMode(Committee *,int);
 void change_StateAfterCompete (Committee *,int);

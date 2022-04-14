@@ -33,7 +33,7 @@ void committee_recv(Committee * self,  int addr){
 						 self->boardNum = boardsNum_recv;
 					 }
                      //No need to print this line because 126 will be recieved three times
-					 //SCI_WRITE(&sci0,"Ready for getting leadership!\n");
+					// SCI_WRITE(&sci0,"Ready for getting leadership!\n");
 					 break;
 				}
                 // case 127:{
@@ -44,6 +44,11 @@ void committee_recv(Committee * self,  int addr){
             }
             break;
         case MASTER:
+            switch(msg.msgId){
+                case 127:
+                    self->mode = INIT;
+                    break;  
+            }
             break;
         case SLAVE:
             break;
@@ -51,19 +56,15 @@ void committee_recv(Committee * self,  int addr){
             switch(msg.msgId){
                 case 127:{
                    if(msg.nodeId>self->myRank){
-                       //compete fail return to init state
-                      // self->mode = INIT;
+                       //fail if has higher rank appears to compete
                       self->isLeader = 0;
                    }
                     break;
                 }
-                // case 124:{
-
-                // }
             }
              break;  
-        case COMPETE:
-            break;
+        // case COMPETE:
+        //     break;
     }
 }
 
@@ -94,6 +95,7 @@ void send_Detecting_msg(Committee* self,int num){
 	// SCI_WRITE(&sci0,"CAN message send!\n");
 }
 
+//NOT USED ANYMORE
 // void send_Detecting_ack_msg(Committee* self,int num){
 // 	CANMsg msg;
 // 	SCI_WRITE(&sci0,"--------------------send_Detecting_ack-------------------------\n");
@@ -133,18 +135,21 @@ void send_GetLeadership_msg(Committee* self ,int arg){
     self->mode = WAITING;
 }
 
-void send_ResponseLeadership_msg (Committee *self ,int nodeId){
-    CANMsg msg;
-	SCI_WRITE(&sci0,"--------------------Response for leadership compete-------------------------\n");
-	msg.nodeId = self->myRank;
-	msg.msgId = 124;
-    char str_num[1]; 
-   	sprintf(str_num,"%d", nodeId);
-   	msg.length = 1;
-    msg.buff[0] = str_num[0];
-    CAN_SEND(&can0, &msg);
-}
-void I_to_W (Committee * self ,int arg){
+//NOT USED ANYMORE
+// void send_ResponseLeadership_msg (Committee *self ,int nodeId){
+//     CANMsg msg;
+// 	SCI_WRITE(&sci0,"--------------------Response for leadership compete-------------------------\n");
+// 	msg.nodeId = self->myRank;
+// 	msg.msgId = 124;
+//     char str_num[1]; 
+//    	sprintf(str_num,"%d", nodeId);
+//    	msg.length = 1;
+//     msg.buff[0] = str_num[0];
+//     CAN_SEND(&can0, &msg);
+// }
+
+void IorS_to_W (Committee * self ,int arg){
+    //Trying to get leadership from init mode or slave mode
     self -> mode = WAITING;
 }
 void change_StateAfterCompete(Committee *self,int arg){
@@ -165,5 +170,7 @@ void initBoardNum(Committee *self, int unused){
 }
 
 void initMode(Committee *self,int unused){
-
+    char strbuff[100];
+    snprintf(strbuff,100,"New boardNum: %d\n",self->boardNum);
+	SCI_WRITE(&sci0,strbuff);
 }
