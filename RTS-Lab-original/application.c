@@ -535,7 +535,7 @@ void reader(App* self, int c)
 
 	switch(c) {
 		case 'o':
-			ASYNC(&committee,I_to_W,0);
+			ASYNC(&committee,IorS_to_W,0);
 			AFTER(MSEC(500),&committee,send_GetLeadership_msg,0);
 			AFTER(SEC(1),&committee,change_StateAfterCompete,0);
 			break;
@@ -697,23 +697,22 @@ void startApp(App* self, int arg)
 	// snprintf(strbuff,100,"start App Mode: %d\nboardNum: %d\nmyRank: %d\nleaderRank: %d\n",self->mode, self->boardNum, self->myRank, self->leaderRank);
 	// SCI_WRITE(&sci0,strbuff);
 //	self->mode = -1;
-    msg.msgId = 1;
-    msg.nodeId = 1;
-    msg.length = 6;
-    msg.buff[0] = 'H';
-    msg.buff[1] = 'e';
-    msg.buff[2] = 'l';
-    msg.buff[3] = 'l';
-    msg.buff[4] = 'o';
-    msg.buff[5] = 0;
-    CAN_SEND(&can0, &msg);
+    // msg.msgId = 1;
+    // msg.nodeId = 1;
+    // msg.length = 6;
+    // msg.buff[0] = 'H';
+    // msg.buff[1] = 'e';
+    // msg.buff[2] = 'l';
+    // msg.buff[3] = 'l';
+    // msg.buff[4] = 'o';
+    // msg.buff[5] = 0;
+   // CAN_SEND(&can0, &msg);
 	snprintf(strbuff,100,"Mode: %d\n",self->mode);
 	SCI_WRITE(&sci0,strbuff);
 	//detect members in the network
 	ASYNC(&committee, initBoardNum, 0);
 	SCI_WRITE(&sci0, "Ready for competing for leadership\n");
-	AFTER(SEC(3), &committee, initMode, 0);
-
+	AFTER(SEC(4), &committee, initMode, 0);
 	// ASYNC(&controller,startSound,0);
 	// ASYNC(&generator, play,0);
 }
