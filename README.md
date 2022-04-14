@@ -32,7 +32,7 @@ The functions related to Master and Slave state switching are implemented in an 
 
 ![State machine](Graph/State_machine.jpg)
 
-![New State machine](Graph/State_simplified.jpg)
+![New State machine](Graph/State_machine_simplified.jpg)
 
 ### initMyRank
 In this step, we manually assign an Id to each board, either hard-coded in the code or entered via the keyboard.
