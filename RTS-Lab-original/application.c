@@ -82,7 +82,7 @@ const int beats[32] = {2,2,2,2,2,
     2,4};
 
 
-App app = { initObject(), 0, 'X', {0},0,-1,0,initTimer(),0,0,0,0,0,-1,-1,-1,-1,0};
+App app = { initObject(), 0, 'X', {0},0,-1,0,initTimer(),0,0,0,0,0,-1,-1,-1,-1,0,1};
 Sound generator = { initObject(), 0,0 , 5,0,1,0,0};
 Controller controller =  { initObject(),0,0,0,120,0,0};
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
@@ -217,11 +217,25 @@ int getBoardNum(App* app, int unused){
 	return app->boardNum;
 }
 int getMute(Sound* self, int unused){
-	return self->volumn;
+	return self->volume;
 }
+
+void monitor(App* self, int unused){
+	int volume = SYNC(&generator, getMute, 0);
+	int bpm = SYNC(&controller, getBpm, 0);
+	char strbuff[20];
+	if(self->mode == MASTER && self->monitorFlag == 1){
+		snprintf(strbuff,100,"Current bpm: %d\n", bpm);
+		SCI_WRITE(&sci0,strbuff);
+	}else if(self->mode == SLAVE && volume == 0 && self->monitorFlag == 1){
+		SCI_WRITE(&sci0,"MUTED\n");
+	}
+	AFTER(SEC(10), self, monitor, 0);
+}
+
 /* CAN protocol
- * msgId->1: increase the volumn
- * msgId->2: decrease the volumn
+ * msgId->1: increase the volume
+ * msgId->2: decrease the volume
  * msgId->3: mute the melody
  * msgId->4: pause the melody
  * msgId->5: change the positive key msg.buff = new value (buffer size = 1)
@@ -285,10 +299,6 @@ void receiver(App* self, int unused)
 			case 9:
 				break;
 			
-				
-			
-			
-
 			default: break;
 		}
 	}
@@ -296,10 +306,10 @@ void receiver(App* self, int unused)
 
 
 void volume_control (Sound* self, int inc){
-	if(inc==1&&self->volumn<20)
-		self->volumn ++;
-	else if (inc==0&&self->volumn>1)
-		self->volumn --;
+	if(inc==1&&self->volume<20)
+		self->volume ++;
+	else if (inc==0&&self->volume>1)
+		self->volume --;
 }	
 
 void deadline_control_sound(Sound* self, int arg){
@@ -311,20 +321,20 @@ void deadline_control_sound(Sound* self, int arg){
 }
 
 void print_mute_state(App *self, int arg){
-	int volumn = SYNC(&generator,getMute,0);
-	if(volumn==0&&self->print_flag&&self->mode==1){
+	int volume = SYNC(&generator,getMute,0);
+	if(volume==0&&self->print_flag&&self->mode==1){
 		SCI_WRITE(&sci0, "Board is muted\n");
 		AFTER(SEC(10),&app, print_mute_state,0);
 	}else return;
 }
 
 void mute (Sound* self){
-	if(self->volumn == 0){
-		self->volumn = self->prev_volumn;
+	if(self->volume == 0){
+		self->volume = self->prev_volume;
 		//SCI_WRITE(&sci0, "Board is unmuted\n");
 	}else{
-		self->prev_volumn = self->volumn;
-		self->volumn = 0;
+		self->prev_volume = self->volume;
+		self->volume = 0;
 		//SCI_WRITE(&sci0, "Board is muted\n");
 		ASYNC(&app, print_mute_state,0);
 	}	
@@ -344,7 +354,7 @@ void play(Sound* self, int arg){
         *DAC_port = 0x00;
     }else{
         if(self->flag){
-            *DAC_port = self->volumn;
+            *DAC_port = self->volume;
         }else{
             *DAC_port = 0x00;
         }
@@ -365,6 +375,11 @@ void change_period(Sound* self, int arg){
 void reset_gap(Sound* self, int arg){
 	self->gap = 0;
 }
+
+int getVolume(Sound* self, int arg){
+	return self->volume;
+}
+
 void toggle_led(Controller* self, int arg){
 	if(self->play ==0 || self->bpm!=arg) return;
 	SIO_TOGGLE(&sio0);
@@ -373,6 +388,7 @@ void toggle_led(Controller* self, int arg){
 	SEND(MSEC(500*interval),MSEC(250*interval),self,toggle_led,self->bpm);
 }
 void startSound(Controller* self, int arg){
+	ASYNC(&app, send_note_msg, self->note);// Send current noteId before playing this note.
 	if(self->play==0) return;
 	int boardNum = SYNC(&app, getBoardNum, 0);
 	int myRank = SYNC(&app, getMyRank, 0);
@@ -399,6 +415,10 @@ void startSound(Controller* self, int arg){
 	}
     
 
+}
+
+int getBpm(Controller* self, int unused){
+	return self->bpm;
 }
 
 void pause(Sound *self, int arg){
@@ -437,8 +457,8 @@ void change_bpm(Controller *self, int num){
 	}
 }	
 /*protocol
- * msgId 1: inc the volumn
- * msgId 2: dec the volumn
+ * msgId 1: inc the volume
+ * msgId 2: dec the volume
  * msgId 3: mute
  * msgId 4: pause
  * msgId 5: change the positive key msg.buff = new value (buffer size = 1)
@@ -650,7 +670,14 @@ void reader(App* self, int c)
 				ASYNC(self,print_mute_state,0);
 			}		
 			break;
-
+		case 'M':
+			// Start or stop monitor
+			if(self->monitorFlag == 1){
+				self->monitorFlag = 0;
+			}else{
+				self->monitorFlag = 1;
+			}
+			break;
 		//Function: Compulsory leadership change
 		
 			
@@ -701,6 +728,7 @@ void startApp(App* self, int arg)
 	AFTER(SEC(4), &committee, initMode, 0);
 	// ASYNC(&controller,startSound,0);
 	// ASYNC(&generator, play,0);
+	AFTER(SEC(10), &app, monitor, 0);
 }
 
 int main()

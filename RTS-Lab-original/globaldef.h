@@ -43,6 +43,7 @@ typedef struct {
 	int myRank; // init with -1
 	int leaderRank; // init with -1
 	int print_flag;
+	int monitorFlag;// init with 1
 } App;
 
 typedef struct {
@@ -57,16 +58,16 @@ typedef struct {
 
 /* Application class for sound generator
 *  flag: whether to write 0 or 1 to the DAC port
-* volumn: the current output volumn for sound generator
-* pre_volumn: keeps the previous volumn before muted
+* volume: the current output volume for sound generator
+* pre_volume: keeps the previous volume before muted
 * deadline_enabled: the deadline enabled state, 0 for false(disabled) 1 for true(enabled)
 */
 typedef struct {
     Object super;
 	int play;
 	int flag;
-	int volumn;
-	int prev_volumn;
+	int volume;
+	int prev_volume;
 	int  deadline_enabled;
     int gap;
     int period;
@@ -82,12 +83,15 @@ void three_history(App *,Time);
 void send_key_msg(App* ,int);
 void send_bmp_msg(App* ,int);
 void send_note_msg(App* ,int);
+void monitor(App*, int);
 
+
+void mute (Sound*);
+void volume_control (Sound* , int);
+void pause(Sound *, int);
 
 void startSound(Controller* , int);
-void mute (Sound* );
-void volume_control (Sound* , int );
-void pause(Sound *, int );
+int getBpm(Controller* , int);
 void pause_c(Controller *, int );
 void set_print_flag(Controller*, int);
 void change_key(Controller *, int );
