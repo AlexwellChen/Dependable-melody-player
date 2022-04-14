@@ -53,3 +53,7 @@ dkms.conf
 Graph/.DS_Store
 .DS_Store
 .DS_Store
+RTS-Lab-original/RTS-Lab.txt
+RTS-Lab-original/RTS-Lab.mk
+RTS-Lab-original/Debug/RTS-Lab.s19
+RTS-Lab-original/compile_flags.txt

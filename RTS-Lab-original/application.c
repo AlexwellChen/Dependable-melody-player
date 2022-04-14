@@ -486,6 +486,18 @@ void send_bpm_msg(App* self, int num){
     CAN_SEND(&can0, &msg);
 }
 
+void send_note_msg(App* self, int noteId){
+	CANMsg msg;
+	msg.msgId = 9;
+	msg.nodeId = self->myRank;
+	char str_num[1]; 
+	sprintf(str_num,"%c", noteId);// TODO: Use character send noteID
+	msg.length = 1;
+	msg.buff[0] = str_num[0];
+	//msg.buff[1] = 0;
+	CAN_SEND(&can0, &msg);
+}
+
 void set_print_flag(Controller* self, int num){
 	self->print_flag =num;
 }

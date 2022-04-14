@@ -79,6 +79,9 @@ int getMyRank(App*, int);
 int getLeaderRank(App*, int);
 int getBoardNum(App*, int);
 void three_history(App *,Time);
+void send_key_msg(App* ,int);
+void send_bmp_msg(App* ,int);
+void send_note_msg(App* ,int);
 
 
 void startSound(Controller* , int);
