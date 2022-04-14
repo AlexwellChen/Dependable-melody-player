@@ -281,36 +281,10 @@ void receiver(App* self, int unused)
 			case 8:
 				SYNC(&controller, change_bpm, 120);
 				SYNC(&controller, change_key, 0);
-
-			case 121:
-				self->boardNum ++;
 				break;
-			case 122:
+			case 9:
+				break;
 			
-				break;
-			case 124:
-				//for leader: get a request from slave requesting leadership#pragma endregion
-				//may have two request from different slaves
-				//int new_leader;
-                //new_leader = msg.nodeId;
-				//TODO: How to handle two requests
-				break;
-			case 125:
-				//for slaves:
-				//Forward reset message to others, until the msg get back to leader in the loop
-				if(self->myRank!=self->leaderRank){
-					ASYNC(&controller, set_print_flag,1);
-					ASYNC(&controller, print_tempo, 0);
-					SYNC(self, send_Reset_msg,0);
-				}
-				break;
-			case 126:
-				num = atoi(msg.buff);
-				self->boardNum = num;
-				//No need to forward the msg anymore
-				// SYNC(self, send_BoardNum_msg, num);
-				break;
-			case 127:
 				
 			
 			

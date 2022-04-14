@@ -30,7 +30,7 @@ The network is built based on the following processes.
 
 The functions related to Master and Slave state switching are implemented in an object called *Committee*, which will be used to maintain a state machine that is used to handle four possible scenarios in the current network: Network Leadership Initialization, Network Leadership Exchange, Master Failure, and Slave Failure.
 
-![State machine](Graph/State_machine.jpg)
+<!-- ![State machine](Graph/State_machine.jpg) -->
 
 ![New State machine](Graph/State_machine_simplified.jpg)
 
@@ -50,7 +50,7 @@ After T=3s we agree that the process of detect is finished and the messages rela
 
 Here we also need to add a lock to avoid that after T=2s we still receive the msgId 122 message and generate a response to it. But this problem may not be very significant in this project because we have a small number of boards, at most three, and just need to pay attention to the operation at startup time.
 
-### initMode
+### initMode (Need to modify)
 In this step we start initializing the state machine. 
 
 First all boards should have an initial state of **Init**, which means a new member of the network (or a Master waiting to hand over leadership).
@@ -70,3 +70,19 @@ If the competition succeeds, we return the Waiting state and do not send any mes
 All members in Init state enter Slave state after receiving msgId 123 and assign msg.nodeId to leaderRank.
 
 At this point, the leadership initialization of the network is complete.
+
+## Melody playing
+
+### Notes broadcast
+After finishing the network leadership setup, we are going to start playing music. The notes are broadcast via msgId 9 and each board needs to determine if the note needs to be played based on the current Notes ID. When Notes ID % boardNum == myRank, the current board plays this note.
+
+### Operation broadcast
+In this melody player, we have several operaitons to control the volume, bpm and key of the music. Each operation has its own CAN message to broadcast from Master to Slave.
+
+### The monitor
+To monitor the Slave's volume state, we create a monitor object that runs on a T-second cycle. When the volume state of a Slave is MUTED, it outputs a corresponding message on the command line, and vice versa. It also operates the LEDs, and when the Slave is MUTED, (the monitor will turn off the blinking LEDs.)?
+
+### Master and Slave behavior
+For the Master, he will first send a msgId 9 in the function that plays each note, broadcasting the current note that should be played to the network. Then the note is played and the play function is executed according to the bpm.
+
+For the Slave, every msgId 9 received will trigger the CAN message handler and a function will handle whether to play the note or not. Note that the Slave does not need to control the period of the sent notes, because msgId 9 is already sent according to bpm.
