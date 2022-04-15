@@ -480,7 +480,12 @@ void startSound(Controller *self, int arg)
 		AFTER(MSEC(500 * interval), &controller, toggle_led, self->bpm);
 	}
 	self->note = (self->note + 1) % 32;
-	if (self->note % boardNum == myRank)
+	if (self->note % boardNum == myRank) 
+	/*
+	BUG: When failure occure, like noteId = 25, myRank = 1 fail, the note will note be played.
+	Option 1: Change myRank dynamically.
+	Option 2: Change play condition.
+	*/
 	{
 		SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
 		SEND(MSEC(tempo * 500 * interval), MSEC(tempo * 250 * interval), self, startSound, self->bpm);

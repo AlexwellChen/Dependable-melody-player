@@ -5,23 +5,27 @@ This music player is based on the implementation of the EDA223 project, the main
 
 ## The protocol
 
-| msgId      | msg.nodeId | msg.buff | Usage | State |
-| ----------- | ----------- | ----------- | ----------- | ----------- |
-| 1 | myRank | NaN | Increase the volum | Master |
-| 2 | myRank | NaN | Decrease the volum | Master |
-| 3 | myRank | NaN | Mute the melody | Master |
-| 4 | myRank | NaN | Pause the melody | Master |
-| 5 | myRank | New value, size = 1 | Change the positive key | Master |
-| 6 | myRank | New value, size = 1 | Change the negative key | Master |
-| 7 | myRank | New value, size = 3 | Change the bpm | Master |
-| 8 | myRank | NaN | Reset the key and tempo | Master |
-| 9 | myRank | Note ID | Boardcast current note | Master |
-| 122 | myRank | NaN | Detect member in the network | Init |
-| 123 | myRank | NaN | Declare Leadership | Waiting->Master |
-| 124 | myRank | Rank from msgId 127 | Response to leader claim | Init |
-| 125 | myRank | NaN | Reset the bpm and key | Master |
-| 126 | myRank | boardNum | Send board number in current network | Init |
-| 127 | myRank | NaN | Claim for leadership | Init->Waiting |
+| msgId      | msg.nodeId | msg.buff | Usage | State | Class |
+| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| 1 | myRank | NaN | Increase the volum | Master | Melody |
+| 2 | myRank | NaN | Decrease the volum | Master | Melody |
+| 3 | myRank | NaN | Mute the melody | Master | Melody |
+| 4 | myRank | NaN | Pause the melody | Master | Melody |
+| 5 | myRank | New value, size = 1 | Change the positive key | Master | Melody |
+| 6 | myRank | New value, size = 1 | Change the negative key | Master | Melody |
+| 7 | myRank | New value, size = 3 | Change the bpm | Master | Melody |
+| 8 | myRank | NaN | Reset the key and tempo | Master | Melody |
+| 9 | myRank | Note ID | Boardcast current note | Master | Melody |
+| 60 | myRank | NaN | Slave Failure occure | Slave | Watchdog |
+| 61 | myRank | NaN | Master Failure occure | Master | Watchdog |
+| 62 | myRank | NaN | Slave reponse to the Master | Master | Watchdog |
+| 63 | myRank | NaN | Master monitor the network | Master | Watchdog |
+| 122 | myRank | NaN | Detect member in the network | Init | Network |
+| 123 | myRank | NaN | Declare Leadership | Waiting->Master | Network |
+| 124 | myRank | Rank from msgId 127 | Response to leader claim | Init | Network |
+| 125 | myRank | NaN | Reset the bpm and key | Master | Network |
+| 126 | myRank | boardNum | Send board number in current network | Init | Network |
+| 127 | myRank | NaN | Claim for leadership | Init->Waiting | Network |
 
 ## Establish the network
 The network is built based on the following processes.
@@ -94,6 +98,13 @@ For the Slave, every msgId 9 received will trigger the CAN message handler and a
 *Failure Mode F2*: The user manually enters silence failure and automatically recovers after 10-30 seconds. In this mode the board can actively send a CAN message to inform the network members that a failure has occurred.
 
 *Failure Mode F3*: The CAN connection wire is disconnected and resumed when the connection wire is plugged back in. No CAN message can be send.
+
+### The Watchdog
+A watchdog is an object used to monitor the status of boards in a network. The watchdog has different behavior under Master and Slave.
+
+Under Master, the watchdog will actively send msgId 63 to monitor the network. slave will return msgId 62 after receiving msgId 63 to report that it is still alive. Master's watchdog needs to identify the nodeId of the currently received msgId 62, and check wether all Slave has responded to the msgId 63 which is sended by Master.
+
+If the Master finds that a known Slave does not respond to msgId 63, then this Slave is determined to have entered Failure Mode F3 (this is due to the fact that if it enters Failure Mode F1/F2, the board both send msgId 61/msgId 60 to report that it has entered FAILURE).
 
 ### Slave failure
 
