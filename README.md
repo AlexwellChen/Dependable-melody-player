@@ -86,3 +86,17 @@ To monitor the Slave's volume state, we create a monitor method that runs on a T
 For the Master, he will first send a msgId 9 in the function that plays each note, broadcasting the current note that should be played to the network. Then the note is played and the play function is executed according to the bpm.
 
 For the Slave, every msgId 9 received will trigger the CAN message handler and a function will handle whether to play the note or not. Note that the Slave does not need to control the period of the sent notes, because msgId 9 is already sent according to bpm.
+
+## Failure handling
+### Defination of Failure Mode
+*Failure Mode F1*: The user manually enters SILENCE FAILURE and manually exits. In this mode the board can actively send a CAN message to inform the network members that a failure has occurred.
+
+*Failure Mode F2*: The user manually enters silence failure and automatically recovers after 10-30 seconds. In this mode the board can actively send a CAN message to inform the network members that a failure has occurred.
+
+*Failure Mode F3*: The CAN connection wire is disconnected and resumed when the connection wire is plugged back in. No CAN message can be send.
+
+### Slave failure
+
+
+### Master failure
+
