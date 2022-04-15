@@ -79,8 +79,8 @@ After finishing the network leadership setup, we are going to start playing musi
 ### Operation broadcast
 In this melody player, we have several operaitons to control the volume, bpm and key of the music. Each operation has its own CAN message to broadcast from Master to Slave.
 
-### The monitor
-To monitor the Slave's volume state, we create a monitor method that runs on a T-second (T = 10s) cycle. When the volume state of a Slave is MUTED, it outputs a corresponding message on the command line, and vice versa. It also operates the LEDs, and when the Slave is MUTED, (the monitor will turn off the blinking LEDs.?) Also the Master would print current bpm in this function.
+<!-- ### The monitor
+To monitor the Slave's volume state, we create a monitor method that runs on a T-second (T = 10s) cycle. When the volume state of a Slave is MUTED, it outputs a corresponding message on the command line, and vice versa. It also operates the LEDs, and when the Slave is MUTED, (the monitor will turn off the blinking LEDs.?) Also the Master would print current bpm in this function. -->
 
 ### Master and Slave behavior
 For the Master, he will first send a msgId 9 in the function that plays each note, broadcasting the current note that should be played to the network. Then the note is played and the play function is executed according to the bpm.

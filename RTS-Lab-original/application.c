@@ -216,21 +216,28 @@ int getLeaderRank(App* app, int unused){
 int getBoardNum(App* app, int unused){
 	return app->boardNum;
 }
-int getMute(Sound* self, int unused){
-	return self->volume;
-}
 
 void monitor(App* self, int unused){
-	int volume = SYNC(&generator, getMute, 0);
-	int bpm = SYNC(&controller, getBpm, 0);
-	char strbuff[20];
-	if(self->mode == MASTER && self->monitorFlag == 1){
-		snprintf(strbuff,100,"Current bpm: %d\n", bpm);
-		SCI_WRITE(&sci0,strbuff);
-	}else if(self->mode == SLAVE && volume == 0 && self->monitorFlag == 1){
-		SCI_WRITE(&sci0,"MUTED\n");
+	if(self->monitorFlag == 1){
+		int volume = SYNC(&generator, getMute, 0);
+		int bpm = SYNC(&controller, getBpm, 0);
+		char strbuff[20];
+		if(self->mode == MASTER){
+			snprintf(strbuff,100,"Current bpm: %d\n", bpm);
+			SCI_WRITE(&sci0,strbuff);
+		}else if(self->mode == SLAVE && volume == 0 && self->monitorFlag == 1){
+			SCI_WRITE(&sci0,"MUTED\n");
+		}
 	}
 	AFTER(SEC(10), self, monitor, 0);
+}
+
+void print_mute_state(App *self, int arg){
+	int volume = SYNC(&generator,getMute,0);
+	if(volume==0&&self->print_flag&&self->mode==1){
+		SCI_WRITE(&sci0, "Board is muted\n");
+		AFTER(SEC(10),&app, print_mute_state,0);
+	}else return;
 }
 
 /* CAN protocol
@@ -305,6 +312,7 @@ void receiver(App* self, int unused)
 }
 
 
+
 void volume_control (Sound* self, int inc){
 	if(inc==1&&self->volume<20)
 		self->volume ++;
@@ -320,12 +328,8 @@ void deadline_control_sound(Sound* self, int arg){
 	}
 }
 
-void print_mute_state(App *self, int arg){
-	int volume = SYNC(&generator,getMute,0);
-	if(volume==0&&self->print_flag&&self->mode==1){
-		SCI_WRITE(&sci0, "Board is muted\n");
-		AFTER(SEC(10),&app, print_mute_state,0);
-	}else return;
+int getMute(Sound* self, int arg){
+	return self->volume;
 }
 
 void mute (Sound* self){
@@ -670,14 +674,14 @@ void reader(App* self, int c)
 				ASYNC(self,print_mute_state,0);
 			}		
 			break;
-		case 'M':
-			// Start or stop monitor
-			if(self->monitorFlag == 1){
-				self->monitorFlag = 0;
-			}else{
-				self->monitorFlag = 1;
-			}
-			break;
+		// case 'M':
+		// 	// Start or stop monitor
+		// 	if(self->monitorFlag == 1){
+		// 		self->monitorFlag = 0;
+		// 	}else{
+		// 		self->monitorFlag = 1;
+		// 	}
+		// 	break;
 		//Function: Compulsory leadership change
 		
 			
@@ -728,7 +732,9 @@ void startApp(App* self, int arg)
 	AFTER(SEC(4), &committee, initMode, 0);
 	// ASYNC(&controller,startSound,0);
 	// ASYNC(&generator, play,0);
-	AFTER(SEC(10), &app, monitor, 0);
+
+	// Print volume and bpm with monitor, need to disscuss
+	// AFTER(SEC(10), &app, monitor, 0);
 }
 
 int main()

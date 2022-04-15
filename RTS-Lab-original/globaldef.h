@@ -84,11 +84,13 @@ void send_key_msg(App* ,int);
 void send_bmp_msg(App* ,int);
 void send_note_msg(App* ,int);
 void monitor(App*, int);
+void initNetwork(App*, int);
 
 
 void mute (Sound*);
 void volume_control (Sound* , int);
 void pause(Sound *, int);
+int getMute(Sound*, int);
 
 void startSound(Controller* , int);
 int getBpm(Controller* , int);
