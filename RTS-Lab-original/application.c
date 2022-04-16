@@ -56,7 +56,7 @@ Compile and upload the .s19 file to the experiment board, type "go" to start the
 // #include <stdio.h>
 //#include "globaldef.h"
 #include "Committee.h"
-
+#include "Watchdog.h"
 const int myIndex[32] = {
 	0, 2, 4, 0,
 	0, 2, 4, 0,
@@ -83,10 +83,12 @@ const int beats[32] = {2, 2, 2, 2, 2,
 App app = {initObject(), 0, 'X', {0}, 0, -1, 0, initTimer(), 0, 0, 0, 0, 0, -1, -1, -1, -1, 0, 1};
 Sound generator = {initObject(), 0, 0, 5, 0, 1, 0, 0,0};
 Controller controller = {initObject(), 0, 0, 0, 120, 0, 0};
+
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app, user_call_back);
 Can can0 = initCan(CAN_PORT0, &app, receiver);
 extern Committee committee;
+extern Watchdog watchdog;
 
 void check_hold(App *self, int unused)
 {
@@ -224,26 +226,6 @@ void initNetwork(App *self, int unused)
 
 
 
-void monitor(App *self, int unused)
-{
-	if (self->monitorFlag == 1)
-	{
-		int volume = SYNC(&generator, getMute, 0);
-		int bpm = SYNC(&controller, getBpm, 0);
-		char strbuff[20];
-		if (self->mode == MASTER)
-		{
-			snprintf(strbuff, 100, "Current bpm: %d\n", bpm);
-			SCI_WRITE(&sci0, strbuff);
-		}
-		else if (self->mode == SLAVE && volume == 0 && self->monitorFlag == 1)
-		{
-			SCI_WRITE(&sci0, "MUTED\n");
-		}
-	}
-	AFTER(SEC(10), self, monitor, 0);
-}
-
 void print_mute_state(App *self, int arg)
 {
 	int volume = SYNC(&generator, getMute, 0);
@@ -290,6 +272,9 @@ void receiver(App *self, int unused)
 	if (msg.msgId > 100)
 	{
 		ASYNC(&committee, committee_recv, &msg);
+	}
+	if (msg.msgId > 50&&msg.msgId<64){
+		ASYNC(&watchdog, watchdog_recv, &msg);
 	}
 	int num = 0;
 	if (self->mode)

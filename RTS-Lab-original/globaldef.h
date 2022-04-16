@@ -85,7 +85,6 @@ void three_history(App *, Time);
 void send_key_msg(App *, int);
 void send_bmp_msg(App *, int);
 void send_note_msg(App *, int);
-void monitor(App *, int);
 void initNetwork(App *, int);
 void setMode(App *, int);
 

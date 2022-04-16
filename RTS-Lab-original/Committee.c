@@ -1,4 +1,5 @@
 #include "Committee.h"
+#include "Watchdog.h"
 
 extern App app;
 extern Sound generator;
@@ -6,6 +7,7 @@ extern Controller controller;
 extern Serial sci0;
 extern SysIO sio0;
 extern Can can0;
+extern Watchdog watchdog;
 
 Committee committee = {initObject(), 1, 0, -1, INIT, 1};
 
@@ -32,7 +34,8 @@ void committee_recv(Committee *self, int addr)
         {
             // For initMode function
             self->mode = SLAVE;
-            ASYNC(&app, setMode, SLAVE);
+            //ASYNC(&app, setMode, SLAVE);
+            ASYNC(&watchdog, monitor, self->leaderRank);
             self->leaderRank = msg.nodeId;
         }
         case 126:
@@ -211,6 +214,8 @@ void change_StateAfterCompete(Committee *self, int arg)
     {
         self->mode = MASTER;
         self->leaderRank = self->myRank;
+        ASYNC(&watchdog, monitor ,self->myRank);
+        
         ASYNC(self, send_DeclareLeader_msg, 0);
         if(self->leaderRank == self->myRank && self->mode == MASTER){
             SCI_WRITE(&sci0, "Claimed Leadership!\n");
