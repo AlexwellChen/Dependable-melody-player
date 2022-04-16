@@ -65,6 +65,21 @@ void committee_recv(Committee *self, int addr)
         }
         break;
     case SLAVE:
+        switch(msg.msgId){
+            case 9:
+                int note = atoi(msg.buff);
+                if(self->boardNum==2&&note%2==1){            
+                    SYNC(&controller, change_note, note);
+                    SYNC(&generator, set_turn,1);
+
+                }else if(self->boardNum==3&&note%3==self->myRank){
+                    SYNC(&controller, change_note, note);
+                    SYNC(&generator, set_turn,1);
+                }else{
+                     SYNC(&generator, set_turn,0);
+                }
+                ASYNC(&controller,startSound,0);
+        }
         break;
     case WAITING:
         switch (msg.msgId)
@@ -80,11 +95,24 @@ void committee_recv(Committee *self, int addr)
         }
         }
         break;
-        // case COMPETE:
-        //     break;
-    }
-}
 
+        case FAILURE:
+            break;
+    }
+   
+}
+int getMyRank(Committee *app, int unused)
+{
+	return app->myRank;
+}
+int getLeaderRank(Committee *app, int unused)
+{
+	return app->leaderRank;
+}
+int getBoardNum(Committee *app, int unused)
+{
+	return app->boardNum;
+}
 void send_BoardNum_msg(Committee *self, int arg)
 {
     CANMsg msg;
@@ -202,4 +230,7 @@ void initMode(Committee *self, int unused)
     char strbuff[100];
     snprintf(strbuff, 100, "New boardNum: %d\n", self->boardNum);
     SCI_WRITE(&sci0, strbuff);
+}
+int read_state(Committee *self ,int unused){
+    return self->mode;
 }

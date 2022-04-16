@@ -56,6 +56,7 @@ typedef struct
 	int bpm;
 	int change_bpm_flag;
 	int print_flag;
+	
 } Controller;
 
 /* Application class for sound generator
@@ -74,14 +75,12 @@ typedef struct
 	int deadline_enabled;
 	int gap;
 	int period;
+	int turn;
 } Sound;
 
 void reader(App *, int);
 void receiver(App *, int);
 void user_call_back(App *, int);
-int getMyRank(App *, int);
-int getLeaderRank(App *, int);
-int getBoardNum(App *, int);
 void three_history(App *, Time);
 void send_key_msg(App *, int);
 void send_bmp_msg(App *, int);
@@ -90,10 +89,13 @@ void monitor(App *, int);
 void initNetwork(App *, int);
 void setMode(App *, int);
 
+void change_note(Controller *, int);
+
 void mute(Sound *);
 void volume_control(Sound *, int);
 void pause(Sound *, int);
 int getMute(Sound *, int);
+void set_turn(Sound *, int);
 
 void startSound(Controller *, int);
 int getBpm(Controller *, int);

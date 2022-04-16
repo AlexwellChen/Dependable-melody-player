@@ -81,7 +81,7 @@ const int beats[32] = {2, 2, 2, 2, 2,
 					   2, 4};
 
 App app = {initObject(), 0, 'X', {0}, 0, -1, 0, initTimer(), 0, 0, 0, 0, 0, -1, -1, -1, -1, 0, 1};
-Sound generator = {initObject(), 0, 0, 5, 0, 1, 0, 0};
+Sound generator = {initObject(), 0, 0, 5, 0, 1, 0, 0,0};
 Controller controller = {initObject(), 0, 0, 0, 120, 0, 0};
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app, user_call_back);
@@ -222,18 +222,7 @@ void initNetwork(App *self, int unused)
 	self->myRank = 0;
 }
 
-int getMyRank(App *app, int unused)
-{
-	return app->myRank;
-}
-int getLeaderRank(App *app, int unused)
-{
-	return app->leaderRank;
-}
-int getBoardNum(App *app, int unused)
-{
-	return app->boardNum;
-}
+
 
 void monitor(App *self, int unused)
 {
@@ -400,7 +389,7 @@ void play(Sound *self, int arg)
 {
 
 	self->flag = !self->flag;
-	if (self->gap)
+	if (self->gap||!self->turn)
 	{
 		*DAC_port = 0x00;
 	}
@@ -440,6 +429,12 @@ void reset_gap(Sound *self, int arg)
 	self->gap = 0;
 }
 
+void set_turn(Sound *self, int flag){
+	self->turn = flag;
+}
+void change_note(Controller *self, int note){
+	self->note = note;
+}
 int getVolume(Sound *self, int arg)
 {
 	return self->volume;
@@ -454,13 +449,34 @@ void toggle_led(Controller *self, int arg)
 	float interval = 60.0 / (float)self->bpm;
 	SEND(MSEC(500 * interval), MSEC(250 * interval), self, toggle_led, self->bpm);
 }
+int judgePlay(Sound *self, int note){
+	int num = SYNC(&committee, getBoardNum,0);
+	int myRank = SYNC(&committee,getMyRank,0);
+	self->turn = 0;
+	switch (num){
+		case 0:
+			break;
+		case 1:
+			self->turn = 1;
+			break;
+		case 2:
+			if(note%2==0) self->turn = 1;
+			break;
+		case 3:
+			if(note%3==myRank) self->turn = 1;
+			break;	
+	}
+	return self->turn;
+}
 void startSound(Controller *self, int arg)
 {
-	ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
-	if (self->play == 0)
-		return;
-	int boardNum = SYNC(&app, getBoardNum, 0);
-	int myRank = SYNC(&app, getMyRank, 0);
+	int state = SYNC(&committee,read_state,0);
+	if(state==MASTER){
+		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+		int ifPlay = SYNC(&generator, judgePlay, self->note);
+	}
+	
+	if (self->play == 0) return;
 	SYNC(&generator, reset_gap, 0);
 
 	int offset = self->key + 5 + 5;
@@ -479,17 +495,22 @@ void startSound(Controller *self, int arg)
 			SIO_WRITE(&sio0, 0);
 		AFTER(MSEC(500 * interval), &controller, toggle_led, self->bpm);
 	}
-	self->note = (self->note + 1) % 32;
-	if (self->note % boardNum == myRank) 
+
+
 	/*
 	BUG: When failure occure, like noteId = 25, myRank = 1 fail, the note will note be played.
 	Option 1: Change myRank dynamically.
 	Option 2: Change play condition.
 	*/
-	{
-		SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
+	
+	SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
+	
+	
+	if(state==MASTER){
+		self->note = (self->note + 1) % 32;
+		//only master repeats calling itself
 		SEND(MSEC(tempo * 500 * interval), MSEC(tempo * 250 * interval), self, startSound, self->bpm);
-	}
+	}		
 }
 
 int getBpm(Controller *self, int unused)
