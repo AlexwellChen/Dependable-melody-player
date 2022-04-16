@@ -81,7 +81,7 @@ const int beats[32] = {2, 2, 2, 2, 2,
 					   2, 4};
 
 App app = {initObject(), 0, 'X', {0}, 0, -1, 0, initTimer(), 0, 0, 0, 0, 0, -1, -1, -1, -1, 0, 1};
-Sound generator = {initObject(), 0, 0, 5, 0, 1, 0, 0,0};
+Sound generator = {initObject(), 0, 0, 5, 0, 1, 0, 0, 0};
 Controller controller = {initObject(), 0, 0, 0, 120, 0, 0};
 
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
@@ -224,8 +224,6 @@ void initNetwork(App *self, int unused)
 	self->myRank = 0;
 }
 
-
-
 void print_mute_state(App *self, int arg)
 {
 	int volume = SYNC(&generator, getMute, 0);
@@ -273,7 +271,8 @@ void receiver(App *self, int unused)
 	{
 		ASYNC(&committee, committee_recv, &msg);
 	}
-	if (msg.msgId > 50&&msg.msgId<64){
+	if (msg.msgId > 50 && msg.msgId < 64)
+	{
 		ASYNC(&watchdog, watchdog_recv, &msg);
 	}
 	int num = 0;
@@ -374,7 +373,7 @@ void play(Sound *self, int arg)
 {
 
 	self->flag = !self->flag;
-	if (self->gap||!self->turn)
+	if (self->gap || !self->turn)
 	{
 		*DAC_port = 0x00;
 	}
@@ -414,10 +413,12 @@ void reset_gap(Sound *self, int arg)
 	self->gap = 0;
 }
 
-void set_turn(Sound *self, int flag){
+void set_turn(Sound *self, int flag)
+{
 	self->turn = flag;
 }
-void change_note(Controller *self, int note){
+void change_note(Controller *self, int note)
+{
 	self->note = note;
 }
 int getVolume(Sound *self, int arg)
@@ -434,34 +435,40 @@ void toggle_led(Controller *self, int arg)
 	float interval = 60.0 / (float)self->bpm;
 	SEND(MSEC(500 * interval), MSEC(250 * interval), self, toggle_led, self->bpm);
 }
-int judgePlay(Sound *self, int note){
-	int num = SYNC(&committee, getBoardNum,0);
-	int myRank = SYNC(&committee,getMyRank,0);
+int judgePlay(Sound *self, int note)
+{
+	int num = SYNC(&committee, getBoardNum, 0);
+	int myRank = SYNC(&committee, getMyRank, 0);
 	self->turn = 0;
-	switch (num){
-		case 0:
-			break;
-		case 1:
+	switch (num)
+	{
+	case 0:
+		break;
+	case 1:
+		self->turn = 1;
+		break;
+	case 2:
+		if (note % 2 == 0)
 			self->turn = 1;
-			break;
-		case 2:
-			if(note%2==0) self->turn = 1;
-			break;
-		case 3:
-			if(note%3==myRank) self->turn = 1;
-			break;	
+		break;
+	case 3:
+		if (note % 3 == myRank)
+			self->turn = 1;
+		break;
 	}
 	return self->turn;
 }
 void startSound(Controller *self, int arg)
 {
-	int state = SYNC(&committee,read_state,0);
-	if(state==MASTER){
+	int state = SYNC(&committee, read_state, 0);
+	if (state == MASTER)
+	{
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 		int ifPlay = SYNC(&generator, judgePlay, self->note);
 	}
-	
-	if (self->play == 0) return;
+
+	if (self->play == 0)
+		return;
 	SYNC(&generator, reset_gap, 0);
 
 	int offset = self->key + 5 + 5;
@@ -481,21 +488,20 @@ void startSound(Controller *self, int arg)
 		AFTER(MSEC(500 * interval), &controller, toggle_led, self->bpm);
 	}
 
-
 	/*
 	BUG: When failure occure, like noteId = 25, myRank = 1 fail, the note will note be played.
 	Option 1: Change myRank dynamically.
 	Option 2: Change play condition.
 	*/
-	
+
 	SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
-	
-	
-	if(state==MASTER){
+
+	if (state == MASTER)
+	{
 		self->note = (self->note + 1) % 32;
-		//only master repeats calling itself
+		// only master repeats calling itself
 		SEND(MSEC(tempo * 500 * interval), MSEC(tempo * 250 * interval), self, startSound, self->bpm);
-	}		
+	}
 }
 
 int getBpm(Controller *self, int unused)
@@ -636,16 +642,14 @@ void reader(App *self, int c)
 	char strbuff[100];
 	int num;
 	CANMsg msg;
-	int MyRank = SYNC(&committee, getMyRank,0);
-	int LeaderRank = SYNC(&committee, getLeaderRank,0);
+	int MyRank = SYNC(&committee, getMyRank, 0);
+	int LeaderRank = SYNC(&committee, getLeaderRank, 0);
 	int boardNum = SYNC(&committee, getBoardNum, 0);
 	int state = SYNC(&committee, read_state, 0);
 	switch (c)
 	{
 	case 'o':
-		ASYNC(&committee, IorS_to_W, 0);
-		AFTER(MSEC(500), &committee, send_GetLeadership_msg, 0);
-		AFTER(SEC(1), &committee, change_StateAfterCompete, 0);
+		ASYNC(&committee, compete, 0);
 		break;
 	case 'k':
 
@@ -700,10 +704,10 @@ void reader(App *self, int c)
 		break;
 	case 'm':
 		// mute(&generator);
-	//	if (isLeader)
-	//	{
-			ASYNC(&generator, mute, 0);
-	//	}
+		//	if (isLeader)
+		//	{
+		ASYNC(&generator, mute, 0);
+		//	}
 		msg.msgId = 3;
 		msg.nodeId = 0;
 		msg.length = 0;
@@ -836,7 +840,7 @@ void startApp(App *self, int arg)
 	SCI_WRITE(&sci0, "Ready for competing for leadership\n");
 	AFTER(SEC(4), &committee, initMode, 0);
 	// ASYNC(&controller,startSound,0);
-	ASYNC(&generator, play,0);
+	ASYNC(&generator, play, 0);
 
 	// Print volume and bpm with monitor, need to disscuss
 	// AFTER(SEC(10), &app, monitor, 0);

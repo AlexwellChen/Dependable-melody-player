@@ -11,13 +11,16 @@ typedef struct
 	Object super;
 	int networkState[3];
     Timer timer;
-    TIme send_time;
+    Time send_time;
+    int monitor_flag;
 } Watchdog;
 
 void watchdog_recv(Watchdog *, int );
 //void initWatchdog(Watchdog *,int);
 void monitor(Watchdog *, int);
-void check(Watchdog * self, int unused);
+void check(Watchdog *, int);
+int getMonitorFlag(Watchdog *, int);
+void setMonitorFlag(Watchdog *, int);
 //void send_ResponseWatchdog_msg(Watchdog *, int);
 
 #endif

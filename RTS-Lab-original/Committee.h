@@ -15,6 +15,9 @@
 #define WAITING 2
 #define COMPETE 3
 #define FAILURE 4
+#define F_1 5
+#define F_2 6
+#define F_3 7
 
 typedef struct
 {
@@ -38,8 +41,15 @@ void IorS_to_W(Committee *, int);
 void initBoardNum(Committee *, int);
 void initMode(Committee *, int);
 void change_StateAfterCompete(Committee *, int);
-int read_state(Committee *,int);
+void compete(Committee *, int);
+int read_state(Committee *, int);
 int getMyRank(Committee *, int);
 int getLeaderRank(Committee *, int);
 int getBoardNum(Committee *, int);
+void D_to_F1(Committee *, int);
+void D_to_F2(Committee *, int);
+void D_to_F3(Committee *, int);
+void F1_to_S(Committee *, int);
+void F2_to_S(Committee *, int);
+void F3_to_S(Committee *, int);
 #endif

@@ -17,7 +17,7 @@ void committee_recv(Committee *self, int addr)
     char strbuff[100];
     snprintf(strbuff, 100, "Committe MSGID: %d\n", msg.msgId);
     SCI_WRITE(&sci0, strbuff);
-	int note;
+    int note;
     switch (self->mode)
     {
     case INIT:
@@ -34,8 +34,8 @@ void committee_recv(Committee *self, int addr)
         {
             // For initMode function
             self->mode = SLAVE;
-            //ASYNC(&app, setMode, SLAVE);
-            ASYNC(&watchdog, monitor, self->leaderRank);
+            // ASYNC(&app, setMode, SLAVE);
+            ASYNC(&watchdog, monitor, 0);
             self->leaderRank = msg.nodeId;
         }
         case 126:
@@ -69,22 +69,27 @@ void committee_recv(Committee *self, int addr)
         }
         break;
     case SLAVE:
-		
-        switch(msg.msgId){
-            case 9:
-                note = atoi(msg.buff);
-                if(self->boardNum==2&&note%2==1){            
-                    SYNC(&controller, change_note, note);
-                    SYNC(&generator, set_turn,1);
 
-                }else if(self->boardNum==3&&note%3==self->myRank){
-                    SYNC(&controller, change_note, note);
-                    SYNC(&generator, set_turn,1);
-                }else{
-                     SYNC(&generator, set_turn,0);
-                }
-                ASYNC(&controller,startSound,0);
-				break;
+        switch (msg.msgId)
+        {
+        case 9:
+            note = atoi(msg.buff);
+            if (self->boardNum == 2 && note % 2 == 1)
+            {
+                SYNC(&controller, change_note, note);
+                SYNC(&generator, set_turn, 1);
+            }
+            else if (self->boardNum == 3 && note % 3 == self->myRank)
+            {
+                SYNC(&controller, change_note, note);
+                SYNC(&generator, set_turn, 1);
+            }
+            else
+            {
+                SYNC(&generator, set_turn, 0);
+            }
+            ASYNC(&controller, startSound, 0);
+            break;
         }
         break;
     case WAITING:
@@ -102,22 +107,21 @@ void committee_recv(Committee *self, int addr)
         }
         break;
 
-        case FAILURE:
-            break;
+    case FAILURE:
+        break;
     }
-   
 }
 int getMyRank(Committee *app, int unused)
 {
-	return app->myRank;
+    return app->myRank;
 }
 int getLeaderRank(Committee *app, int unused)
 {
-	return app->leaderRank;
+    return app->leaderRank;
 }
 int getBoardNum(Committee *app, int unused)
 {
-	return app->boardNum;
+    return app->boardNum;
 }
 void send_BoardNum_msg(Committee *self, int arg)
 {
@@ -214,13 +218,13 @@ void change_StateAfterCompete(Committee *self, int arg)
     {
         self->mode = MASTER;
         self->leaderRank = self->myRank;
-        ASYNC(&watchdog, monitor ,self->myRank);
-        
-        ASYNC(self, send_DeclareLeader_msg, 0);
-        if(self->leaderRank == self->myRank && self->mode == MASTER){
+        ASYNC(&watchdog, monitor, self->myRank);
+
+        ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
+        if (self->leaderRank == self->myRank && self->mode == MASTER)
+        {
             SCI_WRITE(&sci0, "Claimed Leadership!\n");
         }
-       
     }
     else
     {
@@ -243,6 +247,45 @@ void initMode(Committee *self, int unused)
     snprintf(strbuff, 100, "New boardNum: %d\n", self->boardNum);
     SCI_WRITE(&sci0, strbuff);
 }
-int read_state(Committee *self ,int unused){
+int read_state(Committee *self, int unused)
+{
     return self->mode;
+}
+
+void compete(Committee *self, int unused)
+{
+    // Totoal 1 second, could it be shorter?
+    ASYNC(&committee, IorS_to_W, 0);
+    AFTER(MSEC(500), &committee, send_GetLeadership_msg, 0);
+    AFTER(SEC(1), &committee, change_StateAfterCompete, 0);
+}
+
+void D_to_F1(Committee *self, int arg)
+{
+    self->mode = F_1;
+}
+
+void D_to_F2(Committee *self, int arg)
+{
+    self->mode = F_2;
+}
+
+void D_to_F3(Committee *self, int arg)
+{
+    self->mode = F_3;
+}
+
+void F1_to_S(Committee *self, int arg)
+{
+    self->mode = SLAVE;
+}
+
+void F2_to_S(Committee *self, int arg)
+{
+    self->mode = SLAVE;
+}
+
+void F3_to_S(Committee *self, int arg)
+{
+    self->mode = SLAVE;
 }
