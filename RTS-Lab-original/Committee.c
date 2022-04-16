@@ -15,6 +15,7 @@ void committee_recv(Committee *self, int addr)
     char strbuff[100];
     snprintf(strbuff, 100, "Committe MSGID: %d\n", msg.msgId);
     SCI_WRITE(&sci0, strbuff);
+	int note;
     switch (self->mode)
     {
     case INIT:
@@ -65,9 +66,10 @@ void committee_recv(Committee *self, int addr)
         }
         break;
     case SLAVE:
+		
         switch(msg.msgId){
             case 9:
-                int note = atoi(msg.buff);
+                note = atoi(msg.buff);
                 if(self->boardNum==2&&note%2==1){            
                     SYNC(&controller, change_note, note);
                     SYNC(&generator, set_turn,1);
@@ -79,6 +81,7 @@ void committee_recv(Committee *self, int addr)
                      SYNC(&generator, set_turn,0);
                 }
                 ASYNC(&controller,startSound,0);
+				break;
         }
         break;
     case WAITING:
