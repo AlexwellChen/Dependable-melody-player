@@ -46,6 +46,7 @@ int read_state(Committee *, int);
 int getMyRank(Committee *, int);
 int getLeaderRank(Committee *, int);
 int getBoardNum(Committee *, int);
+void setBoardNum(Committee *, int);
 void D_to_F1(Committee *, int);
 void D_to_F2(Committee *, int);
 void D_to_F3(Committee *, int);

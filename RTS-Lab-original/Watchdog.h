@@ -16,11 +16,15 @@ typedef struct
 } Watchdog;
 
 void watchdog_recv(Watchdog *, int );
-//void initWatchdog(Watchdog *,int);
+void initWatchdog(Watchdog *,int);
 void monitor(Watchdog *, int);
 void check(Watchdog *, int);
 int getMonitorFlag(Watchdog *, int);
 void setMonitorFlag(Watchdog *, int);
 //void send_ResponseWatchdog_msg(Watchdog *, int);
+int isMasterExist(Watchdog *, int);
+void send_F1_msg(Watchdog *, int);
+void send_F2_msg(Watchdog *, int);
+void send_Recovery_msg(Watchdog *, int);
 
 #endif

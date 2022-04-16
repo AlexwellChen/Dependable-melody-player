@@ -16,11 +16,9 @@ This music player is based on the implementation of the EDA223 project, the main
 | 7 | myRank | New value, size = 3 | Change the bpm | Master | Melody |
 | 8 | myRank | NaN | Reset the key and tempo | Master | Melody |
 | 9 | myRank | Note ID | Boardcast current note | Master | Melody |
-| 58 | myRank | NaN | Failure recovery | F->S | Watchdog |
-| 59 | myRank | NaN | Slave Failure F2 occure | Slave | Watchdog |
-| 60 | myRank | NaN | Master Failure F2 occure | Master | Watchdog |
-| 61 | myRank | NaN | Slave Failure F1 occure | Slave | Watchdog |
-| 62 | myRank | NaN | Master Failure F1 occure | Master | Watchdog |
+| 60 | myRank | NaN | Failure recovery | Failure->Slave | Watchdog |
+| 61 | myRank | NaN | Failure F2 occure | Master/Slave | Watchdog |
+| 62 | myRank | NaN | Failure F1 occure | Master/Slave | Watchdog |
 | 63 | myRank | NaN |  monitor the network | Master/Slave | Watchdog |
 | 122 | myRank | NaN | Detect member in the network | Init | Network |
 | 123 | myRank | NaN | Declare Leadership | Waiting->Master | Network |
@@ -114,6 +112,9 @@ The Monitor first sets all boards in the Master/Slave state of networkState to D
 Finally we use the AFTER function to call the check function after 0.1s to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).
 
 In check() function we need to use the stateHandler() function to handle the current state of the network, i.e. we need to determine which state of normal/Master failure/Slave failure the network is currently in.
+
+### Check
+
 
 ### State handler
 

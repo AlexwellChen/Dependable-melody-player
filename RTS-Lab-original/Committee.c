@@ -35,6 +35,7 @@ void committee_recv(Committee *self, int addr)
             // For initMode function
             self->mode = SLAVE;
             // ASYNC(&app, setMode, SLAVE);
+            // TODO: SYNC(initWatchdog)
             ASYNC(&watchdog, monitor, 0);
             self->leaderRank = msg.nodeId;
         }
@@ -218,6 +219,7 @@ void change_StateAfterCompete(Committee *self, int arg)
     {
         self->mode = MASTER;
         self->leaderRank = self->myRank;
+        // TODO: SYNC(initWatchdog)
         ASYNC(&watchdog, monitor, self->myRank);
 
         ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
@@ -258,6 +260,11 @@ void compete(Committee *self, int unused)
     ASYNC(&committee, IorS_to_W, 0);
     AFTER(MSEC(500), &committee, send_GetLeadership_msg, 0);
     AFTER(SEC(1), &committee, change_StateAfterCompete, 0);
+}
+
+void setBoardNum(Committee *self, int arg)
+{
+    self->boardNum = arg;
 }
 
 void D_to_F1(Committee *self, int arg)
