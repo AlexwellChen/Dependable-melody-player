@@ -102,14 +102,27 @@ For the Slave, every msgId 9 received will trigger the CAN message handler and a
 *Failure Mode F3*: The CAN connection wire is disconnected and resumed when the connection wire is plugged back in. No CAN message can be send.
 
 ### The Watchdog
-A watchdog is an object used to monitor the status of boards in a network. The watchdog has different behavior under Master and Slave.
+A watchdog is an object used to monitor the status of boards in a network. The basic operation logic of the watchdog is shown in the figure.
 
-Under Master, the watchdog will actively send msgId 63 to monitor the network. slave will return msgId 62 after receiving msgId 63 to report that it is still alive. Master's watchdog needs to identify the nodeId of the currently received msgId 62, and check wether all Slave has responded to the msgId 63 which is sended by Master.
+![Watchdog](Graph/watchdog.jpg)
 
-If the Master finds that a known Slave does not respond to msgId 63, then this Slave is determined to have entered Failure Mode F3 (this is due to the fact that if it enters Failure Mode F1/F2, the board both send msgId 61/msgId 60 to report that it has entered FAILURE).
+### Monitor
+Monitor is a function that maintains the networkState array, which stores the current state of all boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
+
+The Monitor first sets all boards in the Master/Slave state of networkState to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee ->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.
+
+Finally we use the AFTER function to call the check function after 0.1s to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).
+
+In check() function we need to use the stateHandler() function to handle the current state of the network, i.e. we need to determine which state of normal/Master failure/Slave failure the network is currently in.
+
+### State handler
+
 
 ### Slave failure
 
 
 ### Master failure
+
+
+### New member join
 

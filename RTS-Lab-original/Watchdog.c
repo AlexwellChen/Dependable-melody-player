@@ -61,7 +61,7 @@ void check(Watchdog *self, int unused)
     {
         self->networkState[i] = F_3;
     }
-    // TODO: add handler() of networkState
+    // TODO: add stateHandler() of networkState
     /*
      * We have total five combinations: 
      * MSS(normal)
