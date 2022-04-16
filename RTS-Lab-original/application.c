@@ -651,7 +651,9 @@ void reader(App *self, int c)
 	char strbuff[100];
 	int num;
 	CANMsg msg;
-
+	int MyRank = SYNC(&committee, getMyRank,0);
+	int LeaderRank = SYNC(&committee, getLeaderRank,0);
+	int isLeader = (MyRank==LeaderRank)?1:0;
 	switch (c)
 	{
 	case 'o':
@@ -666,7 +668,7 @@ void reader(App *self, int c)
 
 		self->count = 0;
 		// print_key(num);
-		if (!self->mode)
+		if (isLeader)
 		{
 			SYNC(&controller, change_key, num);
 		}
@@ -679,7 +681,7 @@ void reader(App *self, int c)
 
 		self->count = 0;
 		// print_key(num);
-		if (!self->mode)
+		if (isLeader)
 		{
 			SYNC(&controller, change_bpm, num);
 		}
@@ -689,7 +691,7 @@ void reader(App *self, int c)
 
 	case 'q':
 		// volume_control(&generator,1);
-		if (!self->mode)
+		if (isLeader)
 			ASYNC(&generator, volume_control, 1);
 
 		msg.msgId = 1;
@@ -702,7 +704,7 @@ void reader(App *self, int c)
 	case 'a':
 		// SCI_WRITE(&sci0, "Down is pressed");
 		// volume_control(&generator,0);
-		if (!self->mode)
+		if (isLeader)
 			ASYNC(&generator, volume_control, 0);
 
 		msg.msgId = 2;
@@ -712,17 +714,17 @@ void reader(App *self, int c)
 		break;
 	case 'm':
 		// mute(&generator);
-		if (self->mode == 1)
-		{
+	//	if (isLeader)
+	//	{
 			ASYNC(&generator, mute, 0);
-		}
+	//	}
 		msg.msgId = 3;
 		msg.nodeId = 0;
 		msg.length = 0;
 		CAN_SEND(&can0, &msg);
 		break;
 	case 'p':
-		if (!self->mode)
+		if (isLeader)
 		{
 			SYNC(&generator, pause, 0);
 			SYNC(&controller, pause_c, 0);
@@ -740,7 +742,7 @@ void reader(App *self, int c)
 		break;
 	case 'r':
 		// New function: leader reset tempo and key for all boards
-		if (self->mode == 0)
+		if (isLeader)
 		{
 			// check if leader
 			SCI_WRITE(&sci0, "Reseting BPM and key from master\n");
@@ -754,7 +756,7 @@ void reader(App *self, int c)
 
 	case 'e':
 		// New function: enable or disable print tempo
-		if (self->mode == 0)
+		if (isLeader)
 		{
 			if (self->print_flag == 0)
 			{
