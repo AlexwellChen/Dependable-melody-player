@@ -210,8 +210,12 @@ void change_StateAfterCompete(Committee *self, int arg)
     if (self->isLeader)
     {
         self->mode = MASTER;
+        self->leaderRank = self->myRank;
         ASYNC(self, send_DeclareLeader_msg, 0);
-        SCI_WRITE(&sci0, "Claimed Leadership!\n");
+        if(self->leaderRank == self->myRank && self->mode == MASTER){
+            SCI_WRITE(&sci0, "Claimed Leadership!\n");
+        }
+       
     }
     else
     {

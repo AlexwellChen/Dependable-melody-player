@@ -195,7 +195,7 @@ void user_call_back(App *self, int unused)
 				SCI_WRITE(&sci0, "Reset bpm to 120\n");
 				// int bpm = 120;
 				// SYNC(&controller,change_bpm,bpm);
-				if (self->mode == 0)
+				if (SYNC(&committee, read_state, 0) == MASTER)
 				{
 					// check if leader
 					SCI_WRITE(&sci0, "Reseting BPM and key from master\n");
@@ -653,7 +653,8 @@ void reader(App *self, int c)
 	CANMsg msg;
 	int MyRank = SYNC(&committee, getMyRank,0);
 	int LeaderRank = SYNC(&committee, getLeaderRank,0);
-	int isLeader = (MyRank==LeaderRank)?1:0;
+	int boardNum = SYNC(&committee, getBoardNum, 0);
+	int state = SYNC(&committee, read_state, 0);
 	switch (c)
 	{
 	case 'o':
@@ -668,7 +669,7 @@ void reader(App *self, int c)
 
 		self->count = 0;
 		// print_key(num);
-		if (isLeader)
+		if (state == MASTER)
 		{
 			SYNC(&controller, change_key, num);
 		}
@@ -681,7 +682,7 @@ void reader(App *self, int c)
 
 		self->count = 0;
 		// print_key(num);
-		if (isLeader)
+		if (state == MASTER)
 		{
 			SYNC(&controller, change_bpm, num);
 		}
@@ -691,7 +692,7 @@ void reader(App *self, int c)
 
 	case 'q':
 		// volume_control(&generator,1);
-		if (isLeader)
+		if (state == MASTER)
 			ASYNC(&generator, volume_control, 1);
 
 		msg.msgId = 1;
@@ -704,7 +705,7 @@ void reader(App *self, int c)
 	case 'a':
 		// SCI_WRITE(&sci0, "Down is pressed");
 		// volume_control(&generator,0);
-		if (isLeader)
+		if (state == MASTER)
 			ASYNC(&generator, volume_control, 0);
 
 		msg.msgId = 2;
@@ -724,7 +725,7 @@ void reader(App *self, int c)
 		CAN_SEND(&can0, &msg);
 		break;
 	case 'p':
-		if (isLeader)
+		if (state == MASTER)
 		{
 			SYNC(&generator, pause, 0);
 			SYNC(&controller, pause_c, 0);
@@ -737,12 +738,12 @@ void reader(App *self, int c)
 
 		break;
 	case 'x':
-		snprintf(strbuff, 100, "BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n", self->boardNum, self->leaderRank, self->myRank);
+		snprintf(strbuff, 100, "BoardNum: %d\nLeaderRank: %d\nMyRank: %d\nState: %d\n", boardNum, LeaderRank, MyRank, state);
 		SCI_WRITE(&sci0, strbuff);
 		break;
 	case 'r':
 		// New function: leader reset tempo and key for all boards
-		if (isLeader)
+		if (state == MASTER)
 		{
 			// check if leader
 			SCI_WRITE(&sci0, "Reseting BPM and key from master\n");
@@ -756,7 +757,7 @@ void reader(App *self, int c)
 
 	case 'e':
 		// New function: enable or disable print tempo
-		if (isLeader)
+		if (state == MASTER)
 		{
 			if (self->print_flag == 0)
 			{
@@ -850,7 +851,7 @@ void startApp(App *self, int arg)
 	SCI_WRITE(&sci0, "Ready for competing for leadership\n");
 	AFTER(SEC(4), &committee, initMode, 0);
 	// ASYNC(&controller,startSound,0);
-	// ASYNC(&generator, play,0);
+	ASYNC(&generator, play,0);
 
 	// Print volume and bpm with monitor, need to disscuss
 	// AFTER(SEC(10), &app, monitor, 0);
