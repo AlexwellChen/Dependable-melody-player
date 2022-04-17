@@ -16,6 +16,7 @@ This music player is based on the implementation of the EDA223 project, the main
 | 7 | myRank | New value, size = 3 | Change the bpm | Master | Melody |
 | 8 | myRank | NaN | Reset the key and tempo | Master | Melody |
 | 9 | myRank | Note ID | Boardcast current note | Master | Melody |
+| 59 | myRank | NaN | Failure recovery_ack | Master | Watchdog |
 | 60 | myRank | NaN | Failure recovery | Failure->Slave | Watchdog |
 | 61 | myRank | NaN | Failure F2 occure | Master/Slave | Watchdog |
 | 62 | myRank | NaN | Failure F1 occure | Master/Slave | Watchdog |
@@ -107,16 +108,15 @@ A watchdog is an object used to monitor the status of boards in a network. The b
 ### Monitor
 Monitor is a function that maintains the networkState array, which stores the current state of all boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
 
-The Monitor first sets all boards in the Master/Slave state of networkState to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee ->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.
+The Monitor first sets all boards in the Master/Slave state of networkState to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.
 
 Finally we use the AFTER function to call the check function after 0.1s to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).
 
-In check() function we need to use the stateHandler() function to handle the current state of the network, i.e. we need to determine which state of normal/Master failure/Slave failure the network is currently in.
+In check() function we need to use the isMasterExist() function to find whether a Master exists in current network, i.e. we need to determine which state of normal/Master failure/Slave failure the network is currently in.
+
+Also we need to count the number of DEACTIVE, which may indicates the CAN cable of current board is pluged out or not. When we detect 2 DEACTIVE, means we don't get response from other boards, the CAN cable may be lost in this case, thus we should enter failure F_3.
 
 ### Check
-
-
-### State handler
 
 
 ### Slave failure
