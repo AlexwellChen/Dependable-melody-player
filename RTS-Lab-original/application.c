@@ -276,7 +276,8 @@ void receiver(App *self, int unused)
 		ASYNC(&watchdog, watchdog_recv, &msg);
 	}
 	int num = 0;
-	if (self->mode)
+	int mode = SYNC(&committee,read_state,0);
+	if (mode==SLAVE)
 	{
 		switch (msg.msgId)
 		{
@@ -621,7 +622,7 @@ void send_bpm_msg(App *self, int num)
 void send_note_msg(App *self, int noteId)
 {
 	CANMsg msg;
-	msg.msgId = 9;
+	msg.msgId = 119;
 	msg.nodeId = self->myRank;
 	char str_num[1];
 	sprintf(str_num, "%c", noteId); // TODO: Use character send noteID

@@ -74,7 +74,7 @@ void committee_recv(Committee *self, int addr)
 
         switch (msg.msgId)
         {
-        case 9:
+        case 119:
             note = atoi(msg.buff);
             if (self->boardNum == 2 && note % 2 == 1)
             {
