@@ -277,6 +277,7 @@ void checkLeaderExist(Committee* self, int unused){
     if(self->boardNum==1){
         ASYNC(self, compete,0);
     }
+    AFTER(MSEC(10), &controller,startSound,0);
 }
 void exit_Failuremode (Committee *self, int arg)
 {
@@ -286,7 +287,6 @@ void exit_Failuremode (Committee *self, int arg)
     ASYNC(&watchdog,send_Recovery_msg,0);
     ASYNC(&app, compulsory_mute,1);
     AFTER(MSEC(100),self, checkLeaderExist,0);
-    ASYNC(&controller,startSound,0);
 }
 void enter_Failure (Committee *self, int arg)
 {

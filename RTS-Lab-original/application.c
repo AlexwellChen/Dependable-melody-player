@@ -473,6 +473,9 @@ int judgePlay(Sound *self, int note)
 }
 void startSound(Controller *self, int arg)
 {
+	char strbuff[100];
+	snprintf(strbuff, 100, "Controller play: %d\n", self->play);
+	SCI_WRITE(&sci0, strbuff);
 	int state = SYNC(&committee, read_state, 0);
 	if (state == MASTER)
 	{
@@ -741,6 +744,8 @@ void reader(App *self, int c)
 		break;
 	case 'x':
 		snprintf(strbuff, 100, "BoardNum: %d\nLeaderRank: %d\nMyRank: %d\nState: %d\n", boardNum, LeaderRank, MyRank, state);
+		SCI_WRITE(&sci0, strbuff);
+		snprintf(strbuff, 100, "Controller play:%d\nSound play:%d\n", &controller.play, &generator.play);
 		SCI_WRITE(&sci0, strbuff);
 		break;
 	case 'r':
