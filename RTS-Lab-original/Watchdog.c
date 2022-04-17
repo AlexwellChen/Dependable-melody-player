@@ -1,6 +1,8 @@
 #include "Watchdog.h"
 #include "Committee.h"
 
+#define __CAN_LOOPBACK 1
+
 extern App app;
 extern Sound generator;
 extern Controller controller;
@@ -100,8 +102,8 @@ void check(Watchdog *self, int unused)
         ASYNC(&committee,compete,0);
     }
 
-#ifdef __CAN_LOOPBACK
-    if()
+#if __CAN_LOOPBACK == 1
+    
 #else
     if(cntDeactive == 2){
         // MDD or SDD means current board is out, which indicates ourself enter F3.
