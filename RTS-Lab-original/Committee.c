@@ -259,8 +259,8 @@ void compete(Committee *self, int unused)
 {
     // Totoal 1 second, could it be shorter?
     ASYNC(&committee, IorS_to_W, 0);
-    AFTER(MSEC(500), &committee, send_GetLeadership_msg, 0);
-    AFTER(SEC(1), &committee, change_StateAfterCompete, 0);
+    AFTER(MSEC(50), &committee, send_GetLeadership_msg, 0);
+    AFTER(MSEC(100), &committee, change_StateAfterCompete, 0);
 }
 
 void setBoardNum(Committee *self, int arg)
@@ -277,13 +277,13 @@ void checkLeaderExist(Committee* self, int unused){
     if(self->boardNum==1){
         ASYNC(self, compete,0);
     }
-    AFTER(MSEC(10), &controller,startSound,0);
+    AFTER(MSEC(105), &controller,startSound,0);
 }
 void exit_Failuremode (Committee *self, int arg)
 {
     
     self->mode =SLAVE;
-    self->leaderRank = -1;
+    // self->leaderRank = -1;
     ASYNC(&watchdog,send_Recovery_msg,0);
     ASYNC(&app, compulsory_mute,1);
     AFTER(MSEC(100),self, checkLeaderExist,0);
@@ -298,7 +298,7 @@ void enter_Failure (Committee *self, int arg)
         self->boardNum = 1;
     }else if (arg==2){
         self->mode = F_2;
-         self->boardNum = 1;
+         self->boardNum = 0;
         ASYNC(&watchdog,send_F2_msg,0);
         ASYNC(&app, compulsory_mute,0);
         AFTER(SEC(15),self,exit_Failuremode,0);
