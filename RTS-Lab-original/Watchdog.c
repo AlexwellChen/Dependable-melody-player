@@ -24,23 +24,35 @@ void watchdog_recv(Watchdog *self, int addr)
 	Time now;
     switch (msg.msgId)
     {
+    case 64:
+         now = T_SAMPLE(&self->timer);
+        if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        {
+             self->networkState[msg.nodeId] = MASTER;
+        }
+        break;
     case 63:
         // update the state array (in a given time interval)
         now = T_SAMPLE(&self->timer);
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
-            if (msg.nodeId == leaderRank)
-                self->networkState[msg.nodeId] = MASTER;
-            else
-                self->networkState[msg.nodeId] = SLAVE;
+             self->networkState[msg.nodeId] = SLAVE;
         }
         break;
     case 62: // Master Failure F1
-        self->networkState[msg.nodeId] = F_1;
+        now = T_SAMPLE(&self->timer);
+        if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        {
+             self->networkState[msg.nodeId] = F_2;
+        }
         //ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 61: // Slave Failure F1
-        self->networkState[msg.nodeId] = F_2;
+         now = T_SAMPLE(&self->timer);
+        if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        {
+             self->networkState[msg.nodeId] = F_1;
+        }
         //ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 60: // New member join
@@ -64,6 +76,8 @@ void check(Watchdog *self, int unused)
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int cntDeactive = 0;
     int boardNum=0;
+    int masterNum = 0;
+    int myMode  = SYNC(&committee,read_state,0);
     for (int i = 0; i < 3; i++)
     {   
         if(self->networkState[i] == DEACTIVE){
@@ -71,17 +85,36 @@ void check(Watchdog *self, int unused)
             self->networkState[i] = F_3; //passive enter F3
            // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
-        if(self->networkState[i]==MASTER||self->networkState[i]==SLAVE){
+        if(self->networkState[i] == MASTER){
             boardNum ++;
+            masterNum ++;
+        }
+        if(self->networkState[i] == SLAVE){
+            boardNum++;
         }
     }
     ASYNC(&committee, setBoardNum, boardNum);
-    
-    if(cntDeactive == 2){
-        // MDD or SDD means current board is out, which indicates ourself enter F3.
-        ASYNC(&committee, D_to_F3, 0); // go into F3 mode;
+
+    if(masterNum>1){
+        ASYNC(&committee,compete,0);
     }
 
+#ifdef __CAN_LOOPBACK
+    if()
+#else
+    if(cntDeactive == 2){
+        // MDD or SDD means current board is out, which indicates ourself enter F3.
+        if(myMode!=MASTER)
+            ASYNC(&committee, D_to_F3, 0); // go into F3 mode;
+    }
+#endif
+
+ 
+    if(myMode==F_3&&boardNum>0){
+        //recover, change from F_3 to slave
+        ASYNC(&committee, F3_to_S,0);
+
+    }
     /*
      * We have total five combinations:
      * MSS(normal)
@@ -91,7 +124,7 @@ void check(Watchdog *self, int unused)
      * FSF(Master failure)
      * Disregard the order
      */
-    if(!isMasterExist){ // There is no Master in current network
+    if(!SYNC(self, isMasterExist,0)){ // There is no Master in current network
         ASYNC(&committee, compete, 0);  
         // Is it possible get a FFF here? 
     }
@@ -113,13 +146,24 @@ void monitor(Watchdog *self, int unused)
     self->networkState[myRank] = myMode;
 
     msg.nodeId = myRank;
-    msg.msgId = 63;
-    if(myMode==F_1){
-        msg.msgId = 61;
+    switch(myMode){
+        case MASTER:
+            msg.msgId = 64;
+            break;
+        case SLAVE:
+            msg.msgId = 63;
+            break;
+        case F_3:
+            msg.msgId = 63;
+            break;
+        case F_2:
+            msg.msgId = 62;
+            break;
+        case F_1:
+            msg.msgId = 61;
+            break;
     }
-    if(myMode==F_2){
-        msg.msgId = 62;
-    }
+
     CAN_SEND(&can0, &msg);
     Time now = T_SAMPLE(&self->timer);
     self->send_time = now;

@@ -271,7 +271,7 @@ void receiver(App *self, int unused)
 	{
 		ASYNC(&committee, committee_recv, &msg);
 	}
-	if (msg.msgId > 50 && msg.msgId < 64)
+	if (msg.msgId > 50 && msg.msgId < 65)
 	{
 		ASYNC(&watchdog, watchdog_recv, &msg);
 	}
@@ -479,7 +479,7 @@ void startSound(Controller *self, int arg)
 		int ifPlay = SYNC(&generator, judgePlay, self->note);
 	}
 
-	if (self->play == 0)
+	if (self->play == 0||state==F_1||state==F_2)
 		return;
 	SYNC(&generator, reset_gap, 0);
 

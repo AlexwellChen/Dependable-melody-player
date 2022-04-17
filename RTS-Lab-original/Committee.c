@@ -27,7 +27,8 @@ void committee_recv(Committee *self, int addr)
         {
             // For initBoardNum function
             SCI_WRITE(&sci0, "----------------Recv msgId 122---------------------\n");
-            self->boardNum++;
+            if(msg.nodeId!=self->myRank)
+                self->boardNum++;
             break;
         }
         case 123:
@@ -284,7 +285,7 @@ void exit_Failuremode (Committee *self, int arg)
     ASYNC(&watchdog,send_Recovery_msg,0);
     ASYNC(&app, compulsory_mute,1);
     AFTER(MSEC(100),self, checkLeaderExist,0);
-    
+    ASYNC(&controller,startSound,0);
 }
 void enter_Failure (Committee *self, int arg)
 {
