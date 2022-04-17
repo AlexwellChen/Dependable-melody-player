@@ -1,12 +1,6 @@
 #ifndef COMMITTEE_H
 #define COMMITTEE_H
 
-// #include "TinyTimber.h"
-// #include "sciTinyTimber.h"
-// #include "canTinyTimber.h"
-// #include "sioTinyTimber.h"
-// #include <stdlib.h>
-// #include <stdio.h>
 #include "globaldef.h"
 
 #define INIT -1
@@ -47,10 +41,10 @@ int getMyRank(Committee *, int);
 int getLeaderRank(Committee *, int);
 int getBoardNum(Committee *, int);
 void setBoardNum(Committee *, int);
-void enter_Failure(Committee *,int);
-void exit_Failuremode(Committee *,int);
+void enter_Failure(Committee *, int);
+void exit_Failuremode(Committee *, int);
 void changeBNum(Committee *, int);
-void changeLeaderRank (Committee*, int);
+void changeLeaderRank(Committee *, int);
 void D_to_F1(Committee *, int);
 void D_to_F2(Committee *, int);
 void D_to_F3(Committee *, int);

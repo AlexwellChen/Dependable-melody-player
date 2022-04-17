@@ -27,7 +27,7 @@ void committee_recv(Committee *self, int addr)
         {
             // For initBoardNum function
             SCI_WRITE(&sci0, "----------------Recv msgId 122---------------------\n");
-            if(msg.nodeId!=self->myRank)
+            if (msg.nodeId != self->myRank)
                 self->boardNum++;
             break;
         }
@@ -53,11 +53,6 @@ void committee_recv(Committee *self, int addr)
             // SCI_WRITE(&sci0,"Ready for getting leadership!\n");
             break;
         }
-            // case 127:{
-            //     //Send response to those who wants leadership
-            //     ASYNC(self, send_ResponseLeadership_msg,msg.nodeId);
-            //     break;
-            // }
         }
         break;
     case MASTER:
@@ -220,9 +215,7 @@ void change_StateAfterCompete(Committee *self, int arg)
     {
         self->mode = MASTER;
         self->leaderRank = self->myRank;
-        // TODO: SYNC(initWatchdog)
         ASYNC(&watchdog, monitor, self->myRank);
-
         ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
         if (self->leaderRank == self->myRank && self->mode == MASTER)
         {
@@ -268,47 +261,55 @@ void setBoardNum(Committee *self, int arg)
     self->boardNum = arg;
 }
 
-void changeLeaderRank (Committee *self, int rank)
+void changeLeaderRank(Committee *self, int rank)
 {
     self->leaderRank = rank;
 }
-void checkLeaderExist(Committee* self, int unused){
-    //No leader in the system after recovery from F
-    if(self->boardNum==1){
-        ASYNC(self, compete,0);
-    }
-    AFTER(MSEC(105), &controller,startSound,0);
-}
-void exit_Failuremode (Committee *self, int arg)
+void checkLeaderExist(Committee *self, int unused)
 {
-    
-    self->mode =SLAVE;
-    // self->leaderRank = -1;
-    ASYNC(&watchdog,send_Recovery_msg,0);
-    ASYNC(&app, compulsory_mute,1);
-    AFTER(MSEC(100),self, checkLeaderExist,0);
+    // No leader in the system after recovery from F
+    if (self->boardNum == 1)
+    {
+        ASYNC(self, compete, 0);
+    }
+    AFTER(MSEC(105), &controller, startSound, 0);
 }
-void enter_Failure (Committee *self, int arg)
+void exit_Failuremode(Committee *self, int arg)
+{
+
+    self->mode = SLAVE;
+    // self->leaderRank = -1;
+    ASYNC(&watchdog, send_Recovery_msg, 0);
+    ASYNC(&app, compulsory_mute, 1);
+    AFTER(MSEC(100), self, checkLeaderExist, 0);
+}
+void enter_Failure(Committee *self, int arg)
 {
     char strbuff[100];
-    if(arg==1){
+    if (arg == 1)
+    {
         self->mode = F_1;
-        ASYNC(&watchdog,send_F1_msg,0);
-        ASYNC(&app, compulsory_mute,0);
+        ASYNC(&watchdog, send_F1_msg, 0);
+        ASYNC(&app, compulsory_mute, 0);
         self->boardNum = 1;
-    }else if (arg==2){
+    }
+    else if (arg == 2)
+    {
         self->mode = F_2;
-         self->boardNum = 0;
-        ASYNC(&watchdog,send_F2_msg,0);
-        ASYNC(&app, compulsory_mute,0);
-        AFTER(SEC(15),self,exit_Failuremode,0);
-    }else{
-         snprintf(strbuff, 100, "Invalid failure mode number\n");
+        self->boardNum = 0;
+        ASYNC(&watchdog, send_F2_msg, 0);
+        ASYNC(&app, compulsory_mute, 0);
+        AFTER(SEC(15), self, exit_Failuremode, 0);
+    }
+    else
+    {
+        snprintf(strbuff, 100, "Invalid failure mode number\n");
     }
 }
 void recover_Failure1mode(Committee *self, int arg)
 {
-    if (self->mode==F_1) self->mode = SLAVE;
+    if (self->mode == F_1)
+        self->mode = SLAVE;
 }
 // void changeBNum (Committee *self, int num)
 // {

@@ -23,15 +23,15 @@ void watchdog_recv(Watchdog *self, int addr)
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int myRank = SYNC(&committee, getMyRank, 0);
     int boardNum = SYNC(&committee, getBoardNum, 0);
-	int boardsNum_recv;
-	Time now;
+    int boardsNum_recv;
+    Time now;
     switch (msg.msgId)
     {
     case 64:
-         now = T_SAMPLE(&self->timer);
+        now = T_SAMPLE(&self->timer);
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
-             self->networkState[msg.nodeId] = MASTER;
+            self->networkState[msg.nodeId] = MASTER;
         }
         break;
     case 63:
@@ -39,84 +39,88 @@ void watchdog_recv(Watchdog *self, int addr)
         now = T_SAMPLE(&self->timer);
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
-             self->networkState[msg.nodeId] = SLAVE;
+            self->networkState[msg.nodeId] = SLAVE;
         }
         break;
     case 62: // Master Failure F1
         now = T_SAMPLE(&self->timer);
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
-             self->networkState[msg.nodeId] = F_2;
+            self->networkState[msg.nodeId] = F_2;
         }
-        //ASYNC(&committee, setBoardNum, boardNum - 1);
+        // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 61: // Slave Failure F1
-         now = T_SAMPLE(&self->timer);
+        now = T_SAMPLE(&self->timer);
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
-             self->networkState[msg.nodeId] = F_1;
+            self->networkState[msg.nodeId] = F_1;
         }
-        //ASYNC(&committee, setBoardNum, boardNum - 1);
+        // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 60: // New member join
         ASYNC(self, setMonitorFlag, 0);
         ASYNC(&committee, setBoardNum, boardNum + 1);
-        ASYNC(self, send_Recovery_ack,0);
+        ASYNC(self, send_Recovery_ack, 0);
         // Force Synchronization
         AFTER(MSEC((int)(1.5 * SNOOP_INTERVAL)), self, setMonitorFlag, 1);
         AFTER(MSEC(2 * SNOOP_INTERVAL), self, monitor, 0);
         break;
     case 59:
         boardsNum_recv = atoi(msg.buff);
-        ASYNC(&committee, setBoardNum,boardsNum_recv);
+        ASYNC(&committee, setBoardNum, boardsNum_recv);
         ASYNC(&committee, changeLeaderRank, msg.nodeId);
     }
 }
 
 void check(Watchdog *self, int unused)
 {
-   // int boardNum = SYNC(&committee, getBoardNum, 0);
+    // int boardNum = SYNC(&committee, getBoardNum, 0);
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int cntDeactive = 0;
-    int boardNum=0;
+    int boardNum = 0;
     int masterNum = 0;
-    int myMode  = SYNC(&committee,read_state,0);
+    int myMode = SYNC(&committee, read_state, 0);
     for (int i = 0; i < 3; i++)
-    {   
-        if(self->networkState[i] == DEACTIVE){
+    {
+        if (self->networkState[i] == DEACTIVE)
+        {
             cntDeactive++;
-            self->networkState[i] = F_3; //passive enter F3
-           // ASYNC(&committee, setBoardNum, boardNum - 1);
+            self->networkState[i] = F_3; // passive enter F3
+            // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
-        if(self->networkState[i] == MASTER){
-            boardNum ++;
-            masterNum ++;
+        if (self->networkState[i] == MASTER)
+        {
+            boardNum++;
+            masterNum++;
         }
-        if(self->networkState[i] == SLAVE){
+        if (self->networkState[i] == SLAVE)
+        {
             boardNum++;
         }
     }
     ASYNC(&committee, setBoardNum, boardNum);
 
-    if(masterNum>1){
-        ASYNC(&committee,compete,0);
+    if (masterNum > 1)
+    {
+        ASYNC(&committee, compete, 0);
     }
 
 #if __CAN_LOOPBACK == 1
-    
+
 #else
-    if(cntDeactive == 2){
+    if (cntDeactive == 2)
+    {
         // MDD or SDD means current board is out, which indicates ourself enter F3.
-        if(myMode!=MASTER)
+        if (myMode != MASTER)
             ASYNC(&committee, D_to_F3, 0); // go into F3 mode;
     }
 #endif
 
- 
-    if(myMode==F_3&&boardNum>0){
-        //recover, change from F_3 to slave
-        ASYNC(&committee, F3_to_S,0);
-
+    if (myMode == F_3 && boardNum > 0)
+    {
+        // recover, change from F_3 to slave
+        ASYNC(&committee, F3_to_S, 0);
     }
     /*
      * We have total five combinations:
@@ -127,9 +131,10 @@ void check(Watchdog *self, int unused)
      * FSF(Master failure)
      * Disregard the order
      */
-    if(!SYNC(self, isMasterExist,0)){ // There is no Master in current network
-        ASYNC(&committee, compete, 0);  
-        // Is it possible get a FFF here? 
+    if (masterNum == 0)
+    { // There is no Master in current network
+        ASYNC(&committee, compete, 0);
+        // Is it possible get a FFF here?
     }
 
     if (self->monitor_flag)
@@ -142,29 +147,30 @@ void monitor(Watchdog *self, int unused)
     CANMsg msg;
     for (int i = 0; i < 3; i++)
     {
-            self->networkState[i] = DEACTIVE;
+        self->networkState[i] = DEACTIVE;
     }
     int myRank = SYNC(&committee, getMyRank, 0);
     int myMode = SYNC(&committee, read_state, 0);
     self->networkState[myRank] = myMode;
 
     msg.nodeId = myRank;
-    switch(myMode){
-        case MASTER:
-            msg.msgId = 64;
-            break;
-        case SLAVE:
-            msg.msgId = 63;
-            break;
-        case F_3:
-            msg.msgId = 63;
-            break;
-        case F_2:
-            msg.msgId = 62;
-            break;
-        case F_1:
-            msg.msgId = 61;
-            break;
+    switch (myMode)
+    {
+    case MASTER:
+        msg.msgId = 64;
+        break;
+    case SLAVE:
+        msg.msgId = 63;
+        break;
+    case F_3:
+        msg.msgId = 63;
+        break;
+    case F_2:
+        msg.msgId = 62;
+        break;
+    case F_1:
+        msg.msgId = 61;
+        break;
     }
 
     CAN_SEND(&can0, &msg);
@@ -175,13 +181,13 @@ void monitor(Watchdog *self, int unused)
     // AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
 }
 
-void initWatchdog(Watchdog *self, int arg){
+void initWatchdog(Watchdog *self, int arg)
+{
     /*
-    *   由于monitor里的for循环需要保持failure的状态，
-    *   所以还是需要initWatchdog来初始化networkState。
-    *   在initMode后，执行monitor前
-    */
-    
+     *   由于monitor里的for循环需要保持failure的状态，
+     *   所以还是需要initWatchdog来初始化networkState。
+     *   在initMode后，执行monitor前
+     */
 }
 
 int getMonitorFlag(Watchdog *self, int arg)
@@ -193,9 +199,11 @@ void setMonitorFlag(Watchdog *self, int flag)
     self->monitor_flag = flag;
 }
 
-int isMasterExist(Watchdog *self, int arg){
-    for(int i = 0; i < 3; i++){
-        if(self->networkState[i] == MASTER)
+int isMasterExist(Watchdog *self, int arg)
+{
+    for (int i = 0; i < 3; i++)
+    {
+        if (self->networkState[i] == MASTER)
             return 1;
     }
     return 0;
@@ -227,20 +235,24 @@ void send_Recovery_msg(Watchdog *self, int unused)
     msg.msgId = 60;
     CAN_SEND(&can0, &msg);
 }
-void send_Recovery_ack(Watchdog *self, int unused){
+void send_Recovery_ack(Watchdog *self, int unused)
+{
     CANMsg msg;
     int myMode = SYNC(&committee, read_state, 0);
-    int myRank = SYNC(&committee,getMyRank,0);
-    if(myMode==MASTER){
+    int myRank = SYNC(&committee, getMyRank, 0);
+    if (myMode == MASTER)
+    {
         msg.nodeId = myRank;
         msg.msgId = 59;
-        int boardNum = SYNC(&committee,getBoardNum,0);
+        int boardNum = SYNC(&committee, getBoardNum, 0);
         char str_num[1];
         sprintf(str_num, "%d", abs(boardNum));
         msg.length = 1;
         msg.buff[0] = str_num[0];
         CAN_SEND(&can0, &msg);
-    }else{
+    }
+    else
+    {
         return;
-    }  
+    }
 }
