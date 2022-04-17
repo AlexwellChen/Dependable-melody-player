@@ -125,9 +125,6 @@ Then we keep sending msgId 63 at F_3, and when we rejoin the network, we will im
 
 Similarly, other boards receive the msgId 63 from us and they will modify the state in their networkState to know that we have recovered from the F_3 failure.
 
-
-
-
 ### Check
 In the check function, We will first initialize a new boardNum = 0.
 
@@ -145,6 +142,5 @@ As mentioned earlier, when we are in F_3 failure and have access to the network 
 
 Finally we have to determine if there is a Master in the network and if MasterNum == 0, then we trigger the compete.
 
-
 ### New member join
-
+This part mainly focus on failure recovery. When a board is recovery from F_1/F_2/F_3, it should send msgId 60. If current network has a Master, it should send msgId 59 to ack and the msg.buff should contain the boardNum in current network.
