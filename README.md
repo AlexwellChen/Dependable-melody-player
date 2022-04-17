@@ -5,23 +5,23 @@ This music player is based on the implementation of the EDA223 project, the main
 
 ## The protocol
 
-| msgId      | msg.nodeId | msg.buff | Usage | State | Class |
-| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
-| 1 | myRank | NaN | Increase the volum | Master | Melody |
-| 2 | myRank | NaN | Decrease the volum | Master | Melody |
-| 3 | myRank | NaN | Mute the melody | Master | Melody |
-| 4 | myRank | NaN | Pause the melody | Master | Melody |
-| 5 | myRank | New value, size = 1 | Change the positive key | Master | Melody |
-| 6 | myRank | New value, size = 1 | Change the negative key | Master | Melody |
-| 7 | myRank | New value, size = 3 | Change the bpm | Master | Melody |
-| 8 | myRank | NaN | Reset the key and tempo | Master | Melody |
-| 119 | myRank | Note ID | Boardcast current note | Master | Network |
-| 122 | myRank | NaN | Detect member in the network | Init | Network |
-| 123 | myRank | NaN | Declare Leadership | Waiting->Master | Network |
-| 124 | myRank | Rank from msgId 127 | Response to leader claim | Init | Network |
-| 125 | myRank | NaN | Reset the bpm and key | Master | Network |
-| 126 | myRank | boardNum | Send board number in current network | Init | Network |
-| 127 | myRank | NaN | Claim for leadership | Init->Waiting | Network |
+| msgId | msg.nodeId | msg.buff            | Usage                                | State           | Class   |
+| ----- | ---------- | ------------------- | ------------------------------------ | --------------- | ------- |
+| 1     | myRank     | NaN                 | Increase the volum                   | Master          | Melody  |
+| 2     | myRank     | NaN                 | Decrease the volum                   | Master          | Melody  |
+| 3     | myRank     | NaN                 | Mute the melody                      | Master          | Melody  |
+| 4     | myRank     | NaN                 | Pause the melody                     | Master          | Melody  |
+| 5     | myRank     | New value, size = 1 | Change the positive key              | Master          | Melody  |
+| 6     | myRank     | New value, size = 1 | Change the negative key              | Master          | Melody  |
+| 7     | myRank     | New value, size = 3 | Change the bpm                       | Master          | Melody  |
+| 8     | myRank     | NaN                 | Reset the key and tempo              | Master          | Melody  |
+| 119   | myRank     | Note ID             | Boardcast current note               | Master          | Network |
+| 122   | myRank     | NaN                 | Detect member in the network         | Init            | Network |
+| 123   | myRank     | NaN                 | Declare Leadership                   | Waiting->Master | Network |
+| 124   | myRank     | Rank from msgId 127 | Response to leader claim             | Init            | Network |
+| 125   | myRank     | NaN                 | Reset the bpm and key                | Master          | Network |
+| 126   | myRank     | boardNum            | Send board number in current network | Init            | Network |
+| 127   | myRank     | NaN                 | Claim for leadership                 | Init->Waiting   | Network |
 
 ## Establish the network
 The network is built based on the following processes.
@@ -110,12 +110,12 @@ Finally we use the AFTER function to call the check function after [SNOOP_INTERV
 
 As we had wipe all the states which is stored in networkState at the begining of Monitor, we need to track all boards in every watch snoop. As we can know from the assignment, F1 and F2 mode could still handle the CAN message, which means it still send and response watchdog message. Therefore, in different states, watchdog will send different msgId, as shown in the following table.
 
-| msgId      | msg.nodeId | msg.buff | Usage | State | Class |
-| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
-| 61 | myRank | NaN | Failure F1 occure | F_1 | Watchdog |
-| 62 | myRank | NaN | Failure F2 occure | F_2 | Watchdog |
-| 63 | myRank | NaN |  Slave monitor the network/Failure F3 occure | Slave/F_3 | Watchdog |
-| 64 | myRank | NaN |  Master monitor the network | Master | Watchdog |
+| msgId | msg.nodeId | msg.buff | Usage                                       | State     | Class    |
+| ----- | ---------- | -------- | ------------------------------------------- | --------- | -------- |
+| 61    | myRank     | NaN      | Failure F1 occure                           | F_1       | Watchdog |
+| 62    | myRank     | NaN      | Failure F2 occure                           | F_2       | Watchdog |
+| 63    | myRank     | NaN      | Slave monitor the network/Failure F3 occure | Slave/F_3 | Watchdog |
+| 64    | myRank     | NaN      | Master monitor the network                  | Master    | Watchdog |
 
 This is because we believe that if a board is in the F_3 state, its watchdog should continue to work, i.e. send messages according to the snoop interval, and we know that when a new board is added to the network, it must be a Slave. (If there is only this one board, it will be compete and thus transformed into Master). 
 
@@ -140,13 +140,22 @@ As mentioned earlier, when we are in F_3 failure and have access to the network 
 
 Finally we have to determine if there is a Master in the network and if MasterNum == 0, then we trigger the compete.
 
+### Passive backup for failure
+For failures to occur, we need to use passive backup to ensure that every note will be played. After the Master detects or receives a failure occurrence, it will replay the current note with noteId-1 in Melody, i.e. the next note.
+
+This depends on the implementation of the respective code, in our code we switch to the next note as soon as the Master broadcasts the current note, which means that for our Master, the note it gets at any given moment must be the one that hasn't been played yet. So when we send the previous note, if it is not played, we need to resend the previous note, so we need noteId-1.
+
+On the contrary, if we add +1 to the noteId in the code and then send the note, the noteId obtained by the Master at any given moment must be the currently playing note, so we can repeat the noteId.
+
+You are free to choose the implementation here.
+
 ### New member join
 This part mainly focus on failure recovery. When a board is recovery from F_1/F_2/F_3, it should send msgId 60. If current network has a Master, it should send msgId 59 to ack and the msg.buff should contain the boardNum in current network.
 
-| msgId      | msg.nodeId | msg.buff | Usage | State | Class |
-| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
-| 59 | myRank | boardNum | Failure recovery_ack | Master | Watchdog |
-| 60 | myRank | NaN | Failure recovery | Failure->Slave | Watchdog |
+| msgId | msg.nodeId | msg.buff | Usage                | State          | Class    |
+| ----- | ---------- | -------- | -------------------- | -------------- | -------- |
+| 59    | myRank     | boardNum | Failure recovery_ack | Master         | Watchdog |
+| 60    | myRank     | NaN      | Failure recovery     | Failure->Slave | Watchdog |
 
 ## Todo List
 1. Modify debug output information.
