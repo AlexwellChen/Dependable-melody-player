@@ -112,8 +112,6 @@ As we had wipe all the states which is stored in networkState at the begining of
 
 | msgId      | msg.nodeId | msg.buff | Usage | State | Class |
 | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
-| 59 | myRank | boardNum | Failure recovery_ack | Master | Watchdog |
-| 60 | myRank | NaN | Failure recovery | Failure->Slave | Watchdog |
 | 61 | myRank | NaN | Failure F1 occure | F_1 | Watchdog |
 | 62 | myRank | NaN | Failure F2 occure | F_2 | Watchdog |
 | 63 | myRank | NaN |  Slave monitor the network/Failure F3 occure | Slave/F_3 | Watchdog |
@@ -144,3 +142,8 @@ Finally we have to determine if there is a Master in the network and if MasterNu
 
 ### New member join
 This part mainly focus on failure recovery. When a board is recovery from F_1/F_2/F_3, it should send msgId 60. If current network has a Master, it should send msgId 59 to ack and the msg.buff should contain the boardNum in current network.
+
+| msgId      | msg.nodeId | msg.buff | Usage | State | Class |
+| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| 59 | myRank | boardNum | Failure recovery_ack | Master | Watchdog |
+| 60 | myRank | NaN | Failure recovery | Failure->Slave | Watchdog |
