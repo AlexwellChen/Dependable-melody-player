@@ -42,19 +42,29 @@ void watchdog_recv(Watchdog *self, int addr)
             self->networkState[msg.nodeId] = SLAVE;
         }
         break;
-    case 62: // Master Failure F1
+    case 62: // Failure F2
         now = T_SAMPLE(&self->timer);
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
             self->networkState[msg.nodeId] = F_2;
+            if(mode == F_3){
+                // Used for F_3 enter |F_3|F_2|F_1|
+                self->networkState[myRank] = SLAVE;
+            }
         }
         // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
-    case 61: // Slave Failure F1
+    case 61: // Failure F1
         now = T_SAMPLE(&self->timer);
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
             self->networkState[msg.nodeId] = F_1;
+            if(mode == F_3){
+                // Used for F_3 enter |F_3|F_2|F_1|
+                self->networkState[myRank] = SLAVE;
+                // Set to Slave, in check stage the boardNum will change to 1,
+                // and then the committee->mode will change to Slave.
+            }
         }
         // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;

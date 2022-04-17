@@ -130,6 +130,8 @@ Similarly, other boards receive the msgId 63 from us and they will modify the st
 
 F_1/F_2 will also sends msgId 61 and msgId 62 through the monitor, which ensures that we have the latest status of the boards in the network at any given time (the status is updated at every Monitor-Check cycle).
 
+The difference between F_1 and F_2 is only between manual recovery and automatic recovery, the recovery process they perform is exactly the same. Please refer to the New member join section for the specific recovery process.
+
 ### Check
 In the check function, We will first initialize a new boardNum = 0.
 
@@ -157,14 +159,73 @@ On the contrary, if we add +1 to the noteId in the code and then send the note, 
 You are free to choose the implementation here.
 
 ### New member join
-This part mainly focus on failure recovery. When a board is recovery from F_1/F_2/F_3, it should send msgId 60. If current network has a Master, it should send msgId 59 to ack and the msg.buff should contain the boardNum in current network.
+
+**Related CAN messages**
 
 | msgId | msg.nodeId | msg.buff | Usage                | State          | Class    |
 | ----- | ---------- | -------- | -------------------- | -------------- | -------- |
 | 59    | myRank     | boardNum | Failure recovery_ack | Master         | Watchdog |
 | 60    | myRank     | NaN      | Failure recovery     | Failure->Slave | Watchdog |
 
+**Recovery from F_1 and F_2**
+
+This part mainly focus on failure recovery. When a board is recovery from F_1/F_2, it should send msgId 60. If current network has a Master, it should send msgId 59 to ack and the msg.buff should contain the boardNum in current network.
+
+*Case 1*
+
+| State   | Action                                               | networkState            |
+| ------- | ---------------------------------------------------- | ----------------------- |
+| F_1/F_2 | Enter recovery, Send msgId 60/ Recv msgId 63 or 64   | \| F_1/F_2 \| S \| M \| |
+| S       | if Master exist, Recv Ack(msgId 59), update boardNum | \| F_1/F_2 \| S \| M \| |
+| S       | Check master existence.                              | \| F_1/F_2 \| S \| M \| |
+| S       | Next monitor, change netWorkState.                   | \| S \| D \| D \|       |
+| S       | Next check, change netWorkState.                     | \| S \| S \| M \|       |
+
+If the current board is the first board in the network, then it will not receive an ACK from the Master (msgId 59). We stipulate: after sending msgId 60, use AFTER(MSEC(100)) to call a function that checks for the presence of a Master. If no Master exists, we use the COMPLETE function to obtain leadership. 
+
+*Case 2*
+
+| State   | Action                                             | networkState                                |
+| ------- | -------------------------------------------------- | ------------------------------------------- |
+| F_1/F_2 | Enter recovery, Send msgId 60/ Recv msgId 61 or 62 | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| S       | Check master existence.                            | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| W       | Compete for Master.                                | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| M       | Get leadership.                                    | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| M       | Next monitor, change netWorkState.                 | \| M \| D \| D \|                           |
+| M       | Next check, change netWorkState.                   | \| M \| F_1/F_2/F_3 \| F_1/F_2/F_3 \|       |
+
+
+
+*Note*: Start playing music after we have obtained leadership, otherwise an error will occur.
+
+**Recovery from F_3**
+
+The main evidence for determining to exit F_3 is that the current board is in the F_3 mode and boardNum > 0 (indicating that we have received a CAN message).
+
+F_3 join to the network have two senarios.
+
+*Case 1*
+
+| State | Action                             | networkState        |
+| ----- | ---------------------------------- | ------------------- |
+| F_3   | Send msgId 63/ Recv msgId 63 or 64 | \| F_3 \| S \| M \| |
+| F_3   | Count boardNum = 2                 | \| F_3 \| S \| M \| |
+| S     | Exit F_3, enter Slave              | \| S \| S \| M \|   |
+
+*Case 2*
+
+| State | Action                             | networkState            |
+| ----- | ---------------------------------- | ----------------------- |
+| F_3   | Send msgId 63/ Recv msgId 61 or 62 | \| F_3 \| F_2 \| F_1 \| |
+| F_3   | Set networkState[myRank] = Slave   | \| S \| F_2 \| F_1 \|   |
+| F_3   | Count boardNum = 1                 | \| S \| F_2 \| F_1 \|   |
+| S     | Exit F_3, enter Slave              | \| S \| F_2 \| F_1 \|   |
+
+
+
 ## Todo List
 1. Modify debug output information.
 2. Discussing the failure of F_3 in the loopback mode.
 3. Implementing Passive Backup for Notes.
+4. F_3 exit in |F_3|F_2|F_1| case.
+5. If recovery from failure, boardNum == 1, we need to play from the first note.
