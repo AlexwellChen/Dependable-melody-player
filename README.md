@@ -176,10 +176,10 @@ This part mainly focus on failure recovery. When a board is recovery from F_1/F_
 | State   | Action                                               | networkState            |
 | ------- | ---------------------------------------------------- | ----------------------- |
 | F_1/F_2 | Enter recovery, Send msgId 60/ Recv msgId 63 or 64   | \| F_1/F_2 \| S \| M \| |
-| S       | if Master exist, Recv Ack(msgId 59), update boardNum | \| F_1/F_2 \| S \| M \| |
-| S       | Check master existence.                              | \| F_1/F_2 \| S \| M \| |
-| S       | Next monitor, change netWorkState.                   | \| S \| D \| D \|       |
-| S       | Next check, change netWorkState.                     | \| S \| S \| M \|       |
+| Slave   | if Master exist, Recv Ack(msgId 59), update boardNum | \| F_1/F_2 \| S \| M \| |
+| Slave   | Check master existence.                              | \| F_1/F_2 \| S \| M \| |
+| Slave   | Next monitor, change netWorkState.                   | \| S \| D \| D \|       |
+| Slave   | Next check, change netWorkState.                     | \| S \| S \| M \|       |
 
 If the current board is the first board in the network, then it will not receive an ACK from the Master (msgId 59). We stipulate: after sending msgId 60, use AFTER(MSEC(100)) to call a function that checks for the presence of a Master. If no Master exists, we use the COMPLETE function to obtain leadership. 
 
@@ -188,11 +188,11 @@ If the current board is the first board in the network, then it will not receive
 | State   | Action                                             | networkState                                |
 | ------- | -------------------------------------------------- | ------------------------------------------- |
 | F_1/F_2 | Enter recovery, Send msgId 60/ Recv msgId 61 or 62 | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
-| S       | Check master existence.                            | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
-| W       | Compete for Master.                                | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
-| M       | Get leadership.                                    | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
-| M       | Next monitor, change netWorkState.                 | \| M \| D \| D \|                           |
-| M       | Next check, change netWorkState.                   | \| M \| F_1/F_2/F_3 \| F_1/F_2/F_3 \|       |
+| Slave   | Check master existence.                            | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| Waiting | Compete for Master.                                | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| Master  | Get leadership.                                    | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| Master  | Next monitor, change netWorkState.                 | \| M \| D \| D \|                           |
+| Master  | Next check, change netWorkState.                   | \| M \| F_1/F_2/F_3 \| F_1/F_2/F_3 \|       |
 
 
 
@@ -210,7 +210,7 @@ F_3 join to the network have two senarios.
 | ----- | ---------------------------------- | ------------------- |
 | F_3   | Send msgId 63/ Recv msgId 63 or 64 | \| F_3 \| S \| M \| |
 | F_3   | Count boardNum = 2                 | \| F_3 \| S \| M \| |
-| S     | Exit F_3, enter Slave              | \| S \| S \| M \|   |
+| Slave | Exit F_3, enter Slave              | \| S \| S \| M \|   |
 
 *Case 2*
 
@@ -219,7 +219,7 @@ F_3 join to the network have two senarios.
 | F_3   | Send msgId 63/ Recv msgId 61 or 62 | \| F_3 \| F_2 \| F_1 \| |
 | F_3   | Set networkState[myRank] = Slave   | \| S \| F_2 \| F_1 \|   |
 | F_3   | Count boardNum = 1                 | \| S \| F_2 \| F_1 \|   |
-| S     | Exit F_3, enter Slave              | \| S \| F_2 \| F_1 \|   |
+| Slave | Exit F_3, enter Slave              | \| S \| F_2 \| F_1 \|   |
 
 
 
