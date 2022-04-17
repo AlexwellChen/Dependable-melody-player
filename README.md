@@ -47,7 +47,7 @@ After T=3s we agree that the process of detect is finished and the messages rela
 
 Here we also need to add a lock to avoid that after T=2s we still receive the msgId 122 message and generate a response to it. But this problem may not be very significant in this project because we have a small number of boards, at most three, and just need to pay attention to the operation at startup time.
 
-### initMode (Need to modify)
+### initMode
 
 ![New State machine](Graph/State_machine_simplified.jpg)
 
