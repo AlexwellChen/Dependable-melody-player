@@ -102,6 +102,9 @@ A watchdog is an object used to monitor the status of boards in a network. The b
 ![Watchdog](Graph/watchdog.jpg)
 
 ### Monitor
+
+![NetworkState](Graph/networkState.jpg)
+
 Monitor is a function that maintains the networkState array, which stores the current state of all boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
 
 The Monitor first sets all boards to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.
