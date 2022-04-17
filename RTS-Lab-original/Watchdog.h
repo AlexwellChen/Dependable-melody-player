@@ -26,5 +26,5 @@ int isMasterExist(Watchdog *, int);
 void send_F1_msg(Watchdog *, int);
 void send_F2_msg(Watchdog *, int);
 void send_Recovery_msg(Watchdog *, int);
-
+void send_Recovery_ack(Watchdog *, int);
 #endif

@@ -37,35 +37,46 @@ void watchdog_recv(Watchdog *self, int addr)
         break;
     case 62: // Master Failure F1
         self->networkState[msg.nodeId] = F_1;
-        ASYNC(&committee, setBoardNum, boardNum - 1);
+        //ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 61: // Slave Failure F1
         self->networkState[msg.nodeId] = F_2;
-        ASYNC(&committee, setBoardNum, boardNum - 1);
+        //ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 60: // New member join
         ASYNC(self, setMonitorFlag, 0);
         ASYNC(&committee, setBoardNum, boardNum + 1);
+        ASYNC(self, send_Recovery_ack,0);
         // Force Synchronization
         AFTER(MSEC((int)(1.5 * SNOOP_INTERVAL)), self, setMonitorFlag, 1);
         AFTER(MSEC(2 * SNOOP_INTERVAL), self, monitor, 0);
         break;
+    case 59:
+        int boardsNum_recv = atoi(msg.buff);
+        ASYNC(&committee, changeBNum,boardsNum_recv);
+        ASYNC(&committee, changeLeaderRank, msg.nodeId);
     }
 }
 
 void check(Watchdog *self, int unused)
 {
-    int boardNum = SYNC(&committee, getBoardNum, 0);
+   // int boardNum = SYNC(&committee, getBoardNum, 0);
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int cntDeactive = 0;
+    int boardNum=0;
     for (int i = 0; i < 3; i++)
     {   
         if(self->networkState[i] == DEACTIVE){
             cntDeactive++;
             self->networkState[i] = F_3; //passive enter F3
-            ASYNC(&committee, setBoardNum, boardNum - 1);
+           // ASYNC(&committee, setBoardNum, boardNum - 1);
+        }
+        if(self->networkState[i]==MASTER||self->networkState[i]==SLAVE){
+            boardNum ++;
         }
     }
+    ASYNC(&committee, setBoardNum, boardNum);
+    
     if(cntDeactive == 2){
         // MDD or SDD means current board is out, which indicates ourself enter F3.
         ASYNC(&committee, D_to_F3, 0); // go into F3 mode;
@@ -95,19 +106,20 @@ void monitor(Watchdog *self, int unused)
     CANMsg msg;
     for (int i = 0; i < 3; i++)
     {
-        // Keep failure states
-        if (self->networkState[i] == MASTER || self->networkState[i] == SLAVE)
             self->networkState[i] = DEACTIVE;
     }
     int myRank = SYNC(&committee, getMyRank, 0);
-    int leaderRank = SYNC(&committee, getLeaderRank, 0);
-    if (myRank == leaderRank)
-        self->networkState[myRank] = MASTER;
-    else
-        self->networkState[myRank] = SLAVE;
+    int myMode = SYNC(&committee, read_state, 0);
+    self->networkState[myRank] = myMode;
 
     msg.nodeId = myRank;
     msg.msgId = 63;
+    if(myMode==F_1){
+        msg.msgId = 61;
+    }
+    if(myMode==F_2){
+        msg.msgId = 62;
+    }
     CAN_SEND(&can0, &msg);
     Time now = T_SAMPLE(&self->timer);
     self->send_time = now;
@@ -121,7 +133,7 @@ void initWatchdog(Watchdog *self, int arg){
     *   所以还是需要initWatchdog来初始化networkState。
     *   在initMode后，执行monitor前
     */
-
+    
 }
 
 int getMonitorFlag(Watchdog *self, int arg)
@@ -166,4 +178,21 @@ void send_Recovery_msg(Watchdog *self, int unused)
     msg.nodeId = myRank;
     msg.msgId = 60;
     CAN_SEND(&can0, &msg);
+}
+void send_Recovery_ack(Watchdog *self, int unused){
+    CANMsg msg;
+    int myRank = SYNC(&committee, getMyRank, 0);
+    int leaderRank = SYNC(&committee,getLeaderRank,0);
+    if(myRank==leaderRank){
+        msg.nodeId = myRank;
+        msg.msgId = 59;
+        int boardNum = SYNC(&committee,getBoardNum,0);
+        char str_num[1];
+        sprintf(str_num, "%d", abs(boardNum));
+        msg.length = 1;
+        msg.buff[0] = str_num[0];
+        CAN_SEND(&can0, &msg);
+    }else{
+        return;
+    }  
 }

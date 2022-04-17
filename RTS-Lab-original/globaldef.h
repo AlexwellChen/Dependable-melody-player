@@ -90,6 +90,7 @@ void setMode(App *, int);
 
 void change_note(Controller *, int);
 
+void compulsory_mute (Sound *, int);
 void mute(Sound *);
 void volume_control(Sound *, int);
 void pause(Sound *, int);

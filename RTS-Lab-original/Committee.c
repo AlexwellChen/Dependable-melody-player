@@ -267,6 +267,51 @@ void setBoardNum(Committee *self, int arg)
     self->boardNum = arg;
 }
 
+void changeLeaderRank (Committee *self, int rank)
+{
+    self->leaderRank = rank;
+}
+void checkLeaderExist(Committee* self, int unused){
+    //No leader in the system after recovery from F
+    if(self->boardNum==1){
+        ASYNC(self, compete,0);
+    }
+}
+void exit_Failuremode (Committee *self, int arg)
+{
+    
+    self->mode =SLAVE;
+    ASYNC(&watchdog,send_Recovery_msg,0);
+    ASYNC(&app, compulsory_mute,1);
+    AFTER(MSEC(100),self, checkLeaderExist,0);
+    
+}
+void enter_Failure (Committee *self, int arg)
+{
+    char strbuff[100];
+    if(arg==1){
+        self->mode = F_1;
+        ASYNC(&watchdog,send_F1_msg,0);
+        ASYNC(&app, compulsory_mute,0);
+        self->boardNum = 1;
+    }else if (arg==2){
+        self->mode = F_2;
+         self->boardNum = 1;
+        ASYNC(&watchdog,send_F2_msg,0);
+        ASYNC(&app, compulsory_mute,0);
+        AFTER(SEC(15),self,exit_Failuremode,0);
+    }else{
+         snprintf(strbuff, 100, "Invalid failure mode number\n");
+    }
+}
+void recover_Failure1mode(Committee *self, int arg)
+{
+    if (self->mode==F_1) self->mode = SLAVE;
+}
+// void changeBNum (Committee *self, int num)
+// {
+//     self->boardNum = num;
+// }
 void D_to_F1(Committee *self, int arg)
 {
     self->mode = F_1;

@@ -345,6 +345,18 @@ int getMute(Sound *self, int arg)
 	return self->volume;
 }
 
+void compulsory_mute (Sound *self,int arg){
+	if (arg == 1)
+	{
+		self->volume = self->prev_volume;
+		// SCI_WRITE(&sci0, "Board is unmuted\n");
+	}
+	else if (arg==0)
+	{
+		self->prev_volume = self->volume;
+		self->volume = 0;
+	}
+}
 void mute(Sound *self)
 {
 	if (self->volume == 0)
@@ -785,6 +797,18 @@ void reader(App *self, int c)
 			ASYNC(&generator, mute, 0);
 			ASYNC(self, print_mute_state, 0);
 		}
+		break;
+	
+	case 'f':
+		self->c[self->count] = '\0';
+		num = atoi(self->c);
+
+		self->count = 0;
+		ASYNC(&committee,enter_Failure,num);
+		break;
+
+	case 'v':
+		ASYNC(&committee,exit_Failuremode,0);
 		break;
 		// case 'M':
 		// 	// Start or stop monitor
