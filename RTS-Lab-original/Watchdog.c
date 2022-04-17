@@ -21,6 +21,7 @@ void watchdog_recv(Watchdog *self, int addr)
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int myRank = SYNC(&committee, getMyRank, 0);
     int boardNum = SYNC(&committee, getBoardNum, 0);
+	int boardsNum_recv;
 	Time now;
     switch (msg.msgId)
     {
@@ -64,8 +65,8 @@ void watchdog_recv(Watchdog *self, int addr)
         AFTER(MSEC(2 * SNOOP_INTERVAL), self, monitor, 0);
         break;
     case 59:
-        int boardsNum_recv = atoi(msg.buff);
-        ASYNC(&committee, changeBNum,boardsNum_recv);
+        boardsNum_recv = atoi(msg.buff);
+        ASYNC(&committee, setBoardNum,boardsNum_recv);
         ASYNC(&committee, changeLeaderRank, msg.nodeId);
     }
 }
@@ -169,6 +170,7 @@ void monitor(Watchdog *self, int unused)
     self->send_time = now;
 
     AFTER(MSEC(SNOOP_INTERVAL), self, check, 0);
+    // AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
 }
 
 void initWatchdog(Watchdog *self, int arg){
