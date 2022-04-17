@@ -103,13 +103,33 @@ A watchdog is an object used to monitor the status of boards in a network. The b
 
 ### Monitor
 
-![NetworkState](Graph/networkState.jpg)
-
 Monitor is a function that maintains the networkState array, which stores the current state of all boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
+
+<center>
+    <img style="border-radius: 0.3125em;
+    box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
+    src="Graph/networkState.jpg">
+    <br>
+    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
+    display: inline-block;
+    color: #999;
+    padding: 2px;">NetworkState</div>
+</center>
 
 The Monitor first sets all boards to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.
 
 Finally we use the AFTER function to call the check function after [SNOOP_INTERVAL] to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).
+
+<center>
+    <img style="border-radius: 0.3125em;
+    box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
+    src="Graph/networkState_change_in_normal.jpg">
+    <br>
+    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
+    display: inline-block;
+    color: #999;
+    padding: 2px;">NetworkState change in normal case</div>
+</center>
 
 As we had wipe all the states which is stored in networkState at the begining of Monitor, we need to track all boards in every watch snoop. As we can know from the assignment, F1 and F2 mode could still handle the CAN message, which means it still send and response watchdog message. Therefore, in different states, watchdog will send different msgId, as shown in the following table.
 
@@ -120,11 +140,13 @@ As we had wipe all the states which is stored in networkState at the begining of
 | 63    | myRank     | NaN      | Slave monitor the network/Failure F3 occure | Slave/F_3 | Watchdog |
 | 64    | myRank     | NaN      | Master monitor the network                  | Master    | Watchdog |
 
-This is because we believe that if a board is in the F_3 state, its watchdog should continue to work, i.e. send messages according to the snoop interval, and we know that when a new board is added to the network, it must be a Slave. (If there is only this one board, it will be compete and thus transformed into Master). 
+We can find that Slave and F_3 share the same msgId 63 signal.This is because we believe that if a board is in the F_3 state, its watchdog should continue to work, i.e. send messages according to the snoop interval, and we know that when a new board is added to the network, it must be a Slave. (If there is only this one board, it will be compete and thus transformed into Master). 
 
 Then we keep sending msgId 63 at F_3, and when we rejoin the network, we will immediately receive msgId 63 from other Slave or msgId 64 from Master, and these CAN messages will make our board in the networkState corresponding to the board state. In the check function we will find that we are currently out of the F_3 state and in the Slave state. 
 
 Similarly, other boards receive the msgId 63 from us and they will modify the state in their networkState to know that we have recovered from the F_3 failure.
+
+F_1/F_2 will also sends msgId 61 and msgId 62 through the monitor, which ensures that we have the latest status of the boards in the network at any given time (the status is updated at every Monitor-Check cycle).
 
 ### Check
 In the check function, We will first initialize a new boardNum = 0.
