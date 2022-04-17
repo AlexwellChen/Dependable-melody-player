@@ -282,6 +282,7 @@ void exit_Failuremode (Committee *self, int arg)
 {
     
     self->mode =SLAVE;
+    self->leaderRank = -1;
     ASYNC(&watchdog,send_Recovery_msg,0);
     ASYNC(&app, compulsory_mute,1);
     AFTER(MSEC(100),self, checkLeaderExist,0);

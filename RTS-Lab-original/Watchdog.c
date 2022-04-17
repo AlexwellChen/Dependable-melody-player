@@ -227,9 +227,9 @@ void send_Recovery_msg(Watchdog *self, int unused)
 }
 void send_Recovery_ack(Watchdog *self, int unused){
     CANMsg msg;
-    int myRank = SYNC(&committee, getMyRank, 0);
-    int leaderRank = SYNC(&committee,getLeaderRank,0);
-    if(myRank==leaderRank){
+    int myMode = SYNC(&committee, read_state, 0);
+    int myRank = SYNC(&committee,getMyRank,0);
+    if(myMode==MASTER){
         msg.nodeId = myRank;
         msg.msgId = 59;
         int boardNum = SYNC(&committee,getBoardNum,0);
