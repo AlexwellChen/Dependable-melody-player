@@ -16,11 +16,12 @@ This music player is based on the implementation of the EDA223 project, the main
 | 7 | myRank | New value, size = 3 | Change the bpm | Master | Melody |
 | 8 | myRank | NaN | Reset the key and tempo | Master | Melody |
 | 9 | myRank | Note ID | Boardcast current note | Master | Melody |
-| 59 | myRank | NaN | Failure recovery_ack | Master | Watchdog |
+| 59 | myRank | boardNum | Failure recovery_ack | Master | Watchdog |
 | 60 | myRank | NaN | Failure recovery | Failure->Slave | Watchdog |
 | 61 | myRank | NaN | Failure F2 occure | Master/Slave | Watchdog |
 | 62 | myRank | NaN | Failure F1 occure | Master/Slave | Watchdog |
-| 63 | myRank | NaN |  monitor the network | Master/Slave | Watchdog |
+| 63 | myRank | NaN |  Slave monitor the network | Slave | Watchdog |
+| 64 | myRank | NaN |  Master monitor the network | Master | Watchdog |
 | 122 | myRank | NaN | Detect member in the network | Init | Network |
 | 123 | myRank | NaN | Declare Leadership | Waiting->Master | Network |
 | 124 | myRank | Rank from msgId 127 | Response to leader claim | Init | Network |
