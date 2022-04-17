@@ -105,31 +105,13 @@ A watchdog is an object used to monitor the status of boards in a network. The b
 
 Monitor is a function that maintains the networkState array, which stores the current state of all boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
 
-<center>
-    <img style="border-radius: 0.3125em;
-    box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
-    src="Graph/networkState.jpg">
-    <br>
-    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
-    display: inline-block;
-    color: #999;
-    padding: 2px;">NetworkState</div>
-</center>
+![NetworkState](Graph/networkState.jpg)
 
 The Monitor first sets all boards to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.
 
 Finally we use the AFTER function to call the check function after [SNOOP_INTERVAL] to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).
 
-<center>
-    <img style="border-radius: 0.3125em;
-    box-shadow: 0 2px 4px 0 rgba(34,36,38,.12),0 2px 10px 0 rgba(34,36,38,.08);" 
-    src="Graph/networkState_change_in_normal.jpg">
-    <br>
-    <div style="color:orange; border-bottom: 1px solid #d9d9d9;
-    display: inline-block;
-    color: #999;
-    padding: 2px;">NetworkState change in normal case</div>
-</center>
+![NetworkState change in normal case](Graph/networkState_change_in_normal.jpg)
 
 As we had wipe all the states which is stored in networkState at the begining of Monitor, we need to track all boards in every watch snoop. As we can know from the assignment, F1 and F2 mode could still handle the CAN message, which means it still send and response watchdog message. Therefore, in different states, watchdog will send different msgId, as shown in the following table.
 
