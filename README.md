@@ -147,3 +147,8 @@ This part mainly focus on failure recovery. When a board is recovery from F_1/F_
 | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
 | 59 | myRank | boardNum | Failure recovery_ack | Master | Watchdog |
 | 60 | myRank | NaN | Failure recovery | Failure->Slave | Watchdog |
+
+## Todo List
+1. Modify debug output information.
+2. Discussing the failure of F_3 in the loopback mode.
+3. Implementing Passive Backup for Notes.
