@@ -263,10 +263,12 @@ void receiver(App *self, int unused)
 	SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
-	SCI_WRITE(&sci0, "Can msg received: \n");
-	char strbuff[100];
-	snprintf(strbuff, 100, "ID: %d\n", msg.msgId);
-	SCI_WRITE(&sci0, msg.msgId);
+	if(msg.msgId >=100 || msg.msgId < 20){ // Mask watchdog CAN message output
+		SCI_WRITE(&sci0, "Can msg received: \n");
+		char strbuff[100];
+		snprintf(strbuff, 100, "ID: %d\n", msg.msgId);
+		SCI_WRITE(&sci0, msg.msgId);
+	}
 	if (msg.msgId > 100)
 	{
 		ASYNC(&committee, committee_recv, &msg);
@@ -744,10 +746,8 @@ void reader(App *self, int c)
 
 		break;
 	case 'x':
-		snprintf(strbuff, 100, "BoardNum: %d\nLeaderRank: %d\nMyRank: %d\nState: %d\n", boardNum, LeaderRank, MyRank, state);
-		SCI_WRITE(&sci0, strbuff);
-		snprintf(strbuff, 100, "Controller play:%d\nSound play:%d\n", &controller.play, &generator.play);
-		SCI_WRITE(&sci0, strbuff);
+		ASYNC(&committee, committeeDebugOutput, 0);
+		ASYNC(&watchdog, watchdogDebugOutput, 0);
 		break;
 	case 'r':
 		// New function: leader reset tempo and key for all boards

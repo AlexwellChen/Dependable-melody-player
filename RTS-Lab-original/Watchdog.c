@@ -18,7 +18,7 @@ void watchdog_recv(Watchdog *self, int addr)
     CANMsg msg = *(CANMsg *)addr;
     char strbuff[100];
     snprintf(strbuff, 100, "Watchdog MSGID: %d\n", msg.msgId);
-    SCI_WRITE(&sci0, strbuff);
+    // SCI_WRITE(&sci0, strbuff);
     int mode = SYNC(&committee, read_state, 0);
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int myRank = SYNC(&committee, getMyRank, 0);
@@ -47,7 +47,8 @@ void watchdog_recv(Watchdog *self, int addr)
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
             self->networkState[msg.nodeId] = F_2;
-            if(mode == F_3){
+            if (mode == F_3)
+            {
                 // Used for F_3 enter |F_3|F_2|F_1|
                 self->networkState[myRank] = SLAVE;
             }
@@ -59,7 +60,8 @@ void watchdog_recv(Watchdog *self, int addr)
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
             self->networkState[msg.nodeId] = F_1;
-            if(mode == F_3){
+            if (mode == F_3)
+            {
                 // Used for F_3 enter |F_3|F_2|F_1|
                 self->networkState[myRank] = SLAVE;
                 // Set to Slave, in check stage the boardNum will change to 1,
@@ -191,15 +193,6 @@ void monitor(Watchdog *self, int unused)
     // AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
 }
 
-void initWatchdog(Watchdog *self, int arg)
-{
-    /*
-     *   由于monitor里的for循环需要保持failure的状态，
-     *   所以还是需要initWatchdog来初始化networkState。
-     *   在initMode后，执行monitor前
-     */
-}
-
 int getMonitorFlag(Watchdog *self, int arg)
 {
     return self->monitor_flag;
@@ -264,5 +257,51 @@ void send_Recovery_ack(Watchdog *self, int unused)
     else
     {
         return;
+    }
+}
+
+void watchdogDebugOutput(Watchdog *self, int arg)
+{
+    char strbuff[100];
+    for (int i = 0; i < 3; i++)
+    {
+        snprintf(strbuff, 100, "board %d mode: ", i);
+        SCI_WRITE(&sci0, strbuff);
+        switch (self->networkState[i])
+        {
+        case 0:
+            /* code */
+            SCI_WRITE(&sci0, "Master\n");
+            break;
+        case 1:
+            /* code */
+            SCI_WRITE(&sci0, "Slave\n");
+            break;
+        case -1:
+            /* code */
+            SCI_WRITE(&sci0, "Init\n");
+            break;
+        case 2:
+            /* code */
+            SCI_WRITE(&sci0, "Waiting\n");
+            break;
+        case 5:
+            /* code */
+            SCI_WRITE(&sci0, "Failure F1\n");
+            break;
+        case 6:
+            /* code */
+            SCI_WRITE(&sci0, "Failure F2\n");
+            break;
+        case 7:
+            /* code */
+            SCI_WRITE(&sci0, "Failure F3\n");
+            break;
+        case -2:
+            SCI_WRITE(&sci0, "Deactive\n");
+            break;
+        default:
+            break;
+        }
     }
 }

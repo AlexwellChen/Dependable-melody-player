@@ -314,6 +314,49 @@ void recover_Failure1mode(Committee *self, int arg)
 // {
 //     self->boardNum = num;
 // }
+
+void committeeDebugOutput(Committee * self, int arg){
+    char strbuff[100];
+    SCI_WRITE(&sci0, "Committee debug output:\n");
+    snprintf(strbuff, 100, "boardNum: %d\nmyRank: %d\nleaderRank: %d\n");
+    SCI_WRITE(&sci0, strbuff);
+    SCI_WRITE(&sci0, "mode: ");
+    switch (self->mode)
+    {
+    case 0:
+        /* code */
+        SCI_WRITE(&sci0, "Master");
+        break;
+    case 1:
+        /* code */
+        SCI_WRITE(&sci0, "Slave");
+        break;
+    case -1:
+        /* code */
+        SCI_WRITE(&sci0, "Init");
+        break;
+    case 2:
+        /* code */
+        SCI_WRITE(&sci0, "Waiting");
+        break;
+    case 5:
+        /* code */
+        SCI_WRITE(&sci0, "Failure F1");
+        break;
+    case 6:
+        /* code */
+        SCI_WRITE(&sci0, "Failure F2");
+        break;
+    case 7:
+        /* code */
+        SCI_WRITE(&sci0, "Failure F3");
+        break;
+    default:
+        break;
+    }
+    SCI_WRITE(&sci0, "\n");
+}
+
 void D_to_F1(Committee *self, int arg)
 {
     self->mode = F_1;
