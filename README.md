@@ -141,7 +141,7 @@ The number of DEACTIVE may indicates the CAN cable of current board is pluged ou
 
 Whenever we find a Master or Slave, we increase the number of boardNum by 1. At the end of the traversal, we set the new number of boards using setBoardNum.
 
-Then we need to keep an eye on the number of Masters. When the number of Masters is greater than 1, two Masters need to COMPLETE. This can happen when: we move the Master out of the network, at this point the Master detects two DEACTIVE, but since we are the Master, we should continue to play. The two remaining Slave will COMPETE to produce a new Master and form a Master-Slave network. When the original Master joins this MasterSlave network, there will be two Masters.
+Then we need to keep an eye on the number of Masters. When the number of Masters is greater than 1, two Masters need to COMPETE. This can happen when: we move the Master out of the network, at this point the Master detects two DEACTIVE, but since we are the Master, we should continue to play. The two remaining Slave will COMPETE to produce a new Master and form a Master-Slave network. When the original Master joins this MasterSlave network, there will be two Masters.
 
 After dealing with the multiple Master case again, we need to focus on how to recover from the F_3 failure.
 
@@ -181,7 +181,7 @@ This part mainly focus on failure recovery. When a board is recovery from F_1/F_
 | Slave   | Next monitor, change netWorkState.                   | \| S \| D \| D \|       |
 | Slave   | Next check, change netWorkState.                     | \| S \| S \| M \|       |
 
-If the current board is the first board in the network, then it will not receive an ACK from the Master (msgId 59). We stipulate: after sending msgId 60, use AFTER(MSEC(100)) to call a function that checks for the presence of a Master. If no Master exists, we use the COMPLETE function to obtain leadership. 
+If the current board is the first board in the network, then it will not receive an ACK from the Master (msgId 59). We stipulate: after sending msgId 60, use AFTER(MSEC(100)) to call a function that checks for the presence of a Master. If no Master exists, we use the COMPETE function to obtain leadership. 
 
 *Case 2*
 
