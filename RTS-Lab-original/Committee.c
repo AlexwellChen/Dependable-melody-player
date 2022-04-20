@@ -15,8 +15,10 @@ void committee_recv(Committee *self, int addr)
 {
     CANMsg msg = *(CANMsg *)addr;
     char strbuff[100];
-    snprintf(strbuff, 100, "Committe MSGID: %d\n", msg.msgId);
-    SCI_WRITE(&sci0, strbuff);
+	if(msg.msgId != 119){
+		snprintf(strbuff, 100, "Committe MSGID: %d\n", msg.msgId);
+		SCI_WRITE(&sci0, strbuff);
+	}
     int note;
     switch (self->mode)
     {

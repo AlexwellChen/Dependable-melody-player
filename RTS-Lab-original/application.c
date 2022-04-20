@@ -283,12 +283,12 @@ void receiver(App *self, int unused)
 	
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
-	if(msg.msgId >=100 || msg.msgId < 20 && msg.msgId !=119){ // Mask watchdog CAN message output
+	if((msg.msgId >=100 || msg.msgId < 20) && msg.msgId != 119){ // Mask watchdog CAN message output
 		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
 		char strbuff[100];
 		snprintf(strbuff, 100, "ID: %d\n", msg.msgId);
-		SCI_WRITE(&sci0, msg.msgId);
+		SCI_WRITE(&sci0, strbuff);
 	}
 	if (msg.msgId > 100)
 	{
@@ -334,8 +334,6 @@ void receiver(App *self, int unused)
 		case 8:
 			SYNC(&controller, change_bpm, 120);
 			SYNC(&controller, change_key, 0);
-			break;
-		case 9:
 			break;
 
 		default:
@@ -501,8 +499,8 @@ int judgePlay(Sound *self, int note)
 void startSound(Controller *self, int arg)
 {
 	char strbuff[100];
-	snprintf(strbuff, 100, "Controller play: %d\n", self->play);
-	SCI_WRITE(&sci0, strbuff);
+	// snprintf(strbuff, 100, "Controller play: %d\n", self->play);
+	// SCI_WRITE(&sci0, strbuff);
 	int state = SYNC(&committee, read_state, 0);
 	if (state == MASTER)
 	{
