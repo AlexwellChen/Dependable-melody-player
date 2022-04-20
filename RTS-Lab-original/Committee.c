@@ -310,11 +310,9 @@ void recover_Failure1mode(Committee *self, int arg)
     if (self->mode == F_1)
         self->mode = SLAVE;
 }
-// void changeBNum (Committee *self, int num)
-// {
-//     self->boardNum = num;
-// }
-
+void replay(Committee* self, int unused){
+    
+}
 void committeeDebugOutput(Committee * self, int arg){
     char strbuff[100];
     SCI_WRITE(&sci0, "Committee debug output:\n");

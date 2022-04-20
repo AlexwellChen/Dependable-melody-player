@@ -104,5 +104,7 @@ void set_print_flag(Controller *, int);
 void change_key(Controller *, int);
 void change_bpm(Controller *, int);
 void print_tempo(Controller *, int);
+void replay (Controller*, int);
+void passive_backup (Controller*, int);
 
 #endif

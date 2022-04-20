@@ -43,7 +43,6 @@ int getBoardNum(Committee *, int);
 void setBoardNum(Committee *, int);
 void enter_Failure(Committee *, int);
 void exit_Failuremode(Committee *, int);
-void changeBNum(Committee *, int);
 void changeLeaderRank(Committee *, int);
 void committeeDebugOutput(Committee *, int);
 void D_to_F1(Committee *, int);

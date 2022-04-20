@@ -47,6 +47,7 @@ void watchdog_recv(Watchdog *self, int addr)
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
             self->networkState[msg.nodeId] = F_2;
+            ASYNC(&controller, passive_backup,0);
             if (mode == F_3)
             {
                 // Used for F_3 enter |F_3|F_2|F_1|
@@ -60,6 +61,7 @@ void watchdog_recv(Watchdog *self, int addr)
         if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
         {
             self->networkState[msg.nodeId] = F_1;
+            ASYNC(&controller, passive_backup,0);
             if (mode == F_3)
             {
                 // Used for F_3 enter |F_3|F_2|F_1|
@@ -99,6 +101,7 @@ void check(Watchdog *self, int unused)
         {
             cntDeactive++;
             self->networkState[i] = F_3; // passive enter F3
+            ASYNC(&controller, passive_backup,0);
             // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
         if (self->networkState[i] == MASTER)

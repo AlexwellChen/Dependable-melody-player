@@ -10,20 +10,11 @@ Compile and upload the .s19 file to the experiment board, type "go" to start the
  - For increasing volume press "q"
  - For decreasing press "a"
 
- MUTE CONTROL
+ MUTE CONTROL(For slave)
 
  - For mute and unmute press "m"
 
- LOAD CONTROL
-
- - For increasing background load press "w"
- - For decreasing background load press "s"
-
- DEADLINE CONTROL
-
- - For enable and disable deadline press "d"
-
- PLAY
+ PLAY(For Master)
 
  - To pause and play press "p"
 
@@ -46,6 +37,35 @@ Compile and upload the .s19 file to the experiment board, type "go" to start the
  CHANGE TEMPO FROM USER BUTTON
 
  - In the serial momentary presses with user button new bpm is set.
+
+COMPETE FOR LEADERSHIP (For Init or Slave)
+
+- Press 'o' to compete for leadership
+
+PRINT STATE MESSAGE
+
+- Press 'x' to print out debug messages including rank and state(Commitee), and state in Watchdog
+
+RESET TEMPO AND BPM FOR (For Master)
+
+- Press 'r' to reset the tempo to 120 and key to 0 for every board in the system
+
+ENABLE PRINTING TEMPO(For Master) or MUTE STATE (For Slave)
+
+－ Press 'e' to enable/disable the function of printing tempo msg or mute state msg
+
+ENTER FAILURE MODE 1 
+
+- Press '1f' to enter failure mode 1
+
+EXIT FAILURE MODE 1
+
+- Press 'v' to exit failure mode 1
+
+REPLAY THE SONG FROM BEGINNING(For Master)
+
+- Press 'd' to replay the song
+
 
 */
 // #include "TinyTimber.h"
@@ -366,14 +386,17 @@ void mute(Sound *self)
 	if (self->volume == 0)
 	{
 		self->volume = self->prev_volume;
-		// SCI_WRITE(&sci0, "Board is unmuted\n");
+		//Unlit the light when muted
+		SIO_WRITE(&sio0, 1);
 	}
 	else
 	{
 		self->prev_volume = self->volume;
 		self->volume = 0;
 		// SCI_WRITE(&sci0, "Board is muted\n");
+		//Lit when unmuted
 		ASYNC(&app, print_mute_state, 0);
+		SIO_WRITE(&sio0, 0);
 	}
 }
 
@@ -651,7 +674,13 @@ void print_tempo(Controller *self, int num)
 	SCI_WRITE(&sci0, strbuff);
 	AFTER(SEC(10), self, print_tempo, 0);
 }
-
+void replay(Controller* self, int unused){
+    self->note == 0;
+}
+void passive_backup(Controller *self, int unused){
+	self->note --;
+	if(self->note==-1) self->note = 31;
+}
 void reader(App *self, int c)
 {
 	SCI_WRITE(&sci0, "--------------------reader-------------------------\n");
@@ -725,12 +754,14 @@ void reader(App *self, int c)
 		// mute(&generator);
 		//	if (isLeader)
 		//	{
-		ASYNC(&generator, mute, 0);
+		//??Only slave can mute itself??
+		if(state==SLAVE)
+			ASYNC(&generator, mute, 0);
 		//	}
-		msg.msgId = 3;
-		msg.nodeId = 0;
-		msg.length = 0;
-		CAN_SEND(&can0, &msg);
+		// msg.msgId = 3;
+		// msg.nodeId = 0;
+		// msg.length = 0;
+		// CAN_SEND(&can0, &msg);
 		break;
 	case 'p':
 		if (state == MASTER)
@@ -781,7 +812,7 @@ void reader(App *self, int c)
 				ASYNC(&controller, set_print_flag, 0);
 			}
 		}
-		if (self->mode == 1)
+		if (state = SLAVE)
 		{
 			if (self->print_flag == 0)
 			{
@@ -826,6 +857,9 @@ void reader(App *self, int c)
 		// 	}
 		// 	break;
 		// Function: Compulsory leadership change
+	case 'd':
+		ASYNC(&committee, replay,0);
+		break;
 	}
 	if ((c >= '0' && c <= '9') || (self->count == 0 && c == '-'))
 	{
