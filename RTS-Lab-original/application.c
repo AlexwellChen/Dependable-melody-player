@@ -280,10 +280,11 @@ void setMode(App *self, int mode)
  */
 void receiver(App *self, int unused)
 {
-	SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
+	
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
 	if(msg.msgId >=100 || msg.msgId < 20){ // Mask watchdog CAN message output
+		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
 		char strbuff[100];
 		snprintf(strbuff, 100, "ID: %d\n", msg.msgId);
