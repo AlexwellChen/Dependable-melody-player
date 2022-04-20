@@ -310,13 +310,11 @@ void recover_Failure1mode(Committee *self, int arg)
     if (self->mode == F_1)
         self->mode = SLAVE;
 }
-void replay(Committee* self, int unused){
-    
-}
+
 void committeeDebugOutput(Committee * self, int arg){
     char strbuff[100];
     SCI_WRITE(&sci0, "Committee debug output:\n");
-    snprintf(strbuff, 100, "boardNum: %d\nmyRank: %d\nleaderRank: %d\n");
+    snprintf(strbuff, 100, "boardNum: %d\nmyRank: %d\nleaderRank: %d\n", self->boardNum, self->myRank, self->leaderRank);
     SCI_WRITE(&sci0, strbuff);
     SCI_WRITE(&sci0, "mode: ");
     switch (self->mode)
