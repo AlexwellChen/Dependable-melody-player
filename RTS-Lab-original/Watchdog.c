@@ -95,13 +95,13 @@ void check(Watchdog *self, int unused)
     int boardNum = 0;
     int masterNum = 0;
     int myMode = SYNC(&committee, read_state, 0);
-    for (int i = 0; i < 3; i++)
+    int previous_Bnum = SYNC(&committee,getBoardNum,0);
+    for (int i = 0; i < previous_Bnum; i++)
     {
         if (self->networkState[i] == DEACTIVE)
         {
             cntDeactive++;
-            self->networkState[i] = F_3; // passive enter F3
-            ASYNC(&controller, passive_backup,0);
+            self->networkState[i] = F_3; // passive enter F3         
             // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
         if (self->networkState[i] == MASTER)
@@ -113,6 +113,9 @@ void check(Watchdog *self, int unused)
         {
             boardNum++;
         }
+    }
+    if(boardNum<previous_Bnum){
+         ASYNC(&controller, passive_backup,0);
     }
     ASYNC(&committee, setBoardNum, boardNum);
 
