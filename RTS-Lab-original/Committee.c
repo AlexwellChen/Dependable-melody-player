@@ -72,7 +72,9 @@ void committee_recv(Committee *self, int addr)
         switch (msg.msgId)
         {
         case 119:
-            note = atoi(msg.buff);
+            note = (int)msg.buff[0];
+            SCI_WRITE(&sci0, note);
+            SCI_WRITE(&sci0, "\n");
             if (self->boardNum == 2 && note % 2 == 1)
             {
                 SYNC(&controller, change_note, note);
@@ -147,8 +149,8 @@ void send_Detecting_msg(Committee *self, int num)
     SCI_WRITE(&sci0, strbuff);
     msg.nodeId = self->myRank;
     msg.msgId = 122;
-    // CAN_SEND(&can0, &msg);
-    // SCI_WRITE(&sci0,"CAN message send!\n");
+    CAN_SEND(&can0, &msg);
+    SCI_WRITE(&sci0,"CAN message send!\n");
 }
 
 // NOT USED ANYMORE

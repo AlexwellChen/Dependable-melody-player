@@ -96,7 +96,7 @@ void check(Watchdog *self, int unused)
     int masterNum = 0;
     int myMode = SYNC(&committee, read_state, 0);
     int previous_Bnum = SYNC(&committee,getBoardNum,0);
-    for (int i = 0; i < previous_Bnum; i++)
+    for (int i = 0; i < 3; i++)
     {
         if (self->networkState[i] == DEACTIVE)
         {
