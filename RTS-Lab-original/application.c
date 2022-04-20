@@ -283,7 +283,7 @@ void receiver(App *self, int unused)
 	
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
-	if(msg.msgId >=100 || msg.msgId < 20){ // Mask watchdog CAN message output
+	if(msg.msgId >=100 || msg.msgId < 20 && msg.msgId !=119){ // Mask watchdog CAN message output
 		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
 		char strbuff[100];
