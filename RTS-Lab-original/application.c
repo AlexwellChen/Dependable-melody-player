@@ -674,7 +674,7 @@ void print_tempo(Controller *self, int num)
 	AFTER(SEC(10), self, print_tempo, 0);
 }
 void replay(Controller* self, int unused){
-    self->note == 0;
+    self->note = 0;
 }
 void passive_backup(Controller *self, int unused){
 	self->note --;
@@ -811,7 +811,7 @@ void reader(App *self, int c)
 				ASYNC(&controller, set_print_flag, 0);
 			}
 		}
-		if (state = SLAVE)
+		if (state == SLAVE)
 		{
 			if (self->print_flag == 0)
 			{
@@ -857,7 +857,7 @@ void reader(App *self, int c)
 		// 	break;
 		// Function: Compulsory leadership change
 	case 'd':
-		ASYNC(&committee, replay,0);
+		ASYNC(&controller, replay,0);
 		break;
 	}
 	if ((c >= '0' && c <= '9') || (self->count == 0 && c == '-'))
