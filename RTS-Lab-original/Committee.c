@@ -9,7 +9,7 @@ extern SysIO sio0;
 extern Can can0;
 extern Watchdog watchdog;
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -75,7 +75,7 @@ void committee_recv(Committee *self, int addr)
             note = atoi(msg.buff);
             sprintf(strbuff,"Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
-            SYNC(&controller, change_note, note);;
+           // ASYNC(&controller, change_note, note);
             // if (self->boardNum == 2 && note % 2 == 1)
             // {
             //    // SYNC(&controller, change_note, note);
@@ -90,7 +90,6 @@ void committee_recv(Committee *self, int addr)
             // {
             //     SYNC(&generator, set_turn, 0);
             // }
-	        ASYNC(&controller, startSound, SYNC(&controller, getBpm, 0));
            
             break;
         }

@@ -496,7 +496,6 @@ int judgePlay(Sound *self, int note)
 					self->turn = 0;
 					break;
 			}
-			self->turn = 0;
 		}else{
 			switch(myMode){
 				case MASTER:
@@ -593,9 +592,10 @@ void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
 	ASYNC(&controller, toggle_led, self->bpm);
+	ASYNC(&controller, startSound, 0);
 	int state = SYNC(&committee,read_state,0);
 	if(state==MASTER){
-		SYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 		ASYNC(&controller, startSound, 0);
 	}else if(state==SLAVE){
 	//	 ASYNC(&controller, startSound, 0);
