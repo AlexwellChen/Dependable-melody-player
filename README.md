@@ -229,3 +229,4 @@ F_3 join to the network have two senarios.
 3. ~~Implementing Passive Backup for Notes.~~
 4. ~~F_3 exit in |F_3|F_2|F_1| case.~~ Done, need test
 5. If recovery from failure, boardNum == 1, we need to play from the first note.
+6. note send
