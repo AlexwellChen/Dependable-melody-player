@@ -220,7 +220,7 @@ void change_StateAfterCompete(Committee *self, int arg)
     {
         self->mode = MASTER;
         self->leaderRank = self->myRank;
-        ASYNC(&watchdog, monitor, self->myRank);
+        //ASYNC(&watchdog, monitor, self->myRank);
         ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
         if (self->leaderRank == self->myRank && self->mode == MASTER)
         {
