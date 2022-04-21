@@ -73,7 +73,7 @@ void committee_recv(Committee *self, int addr)
         {
         case 119:
             note = atoi(msg.buff);
-            SCI_WRITE(&sci0, note);
+            sprintf(strbuff,"Note is: %d ", note);
             SCI_WRITE(&sci0, "\n");
             if (self->boardNum == 2 && note % 2 == 1)
             {
