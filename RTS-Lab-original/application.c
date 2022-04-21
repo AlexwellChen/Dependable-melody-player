@@ -596,9 +596,6 @@ void pause_c(Controller *self, int arg)
 	int state = SYNC(&committee,read_state,0);
 	if(state==MASTER){
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
-		ASYNC(&controller, startSound, 0);
-	}else if(state==SLAVE){
-	//	 ASYNC(&controller, startSound, 0);
 	}
 }
 
@@ -704,8 +701,8 @@ void send_note_msg(App *self, int noteId)
 		msg.buff[0] = str_num[0];
 		msg.buff[1] = str_num[1];
 	}
-
 	CAN_SEND(&can0, &msg);
+	SCI_WRITE(&sci0, "Send 119\n");
 }
 
 void set_print_flag(Controller *self, int num)
