@@ -669,8 +669,8 @@ void send_note_msg(App *self, int noteId)
 	char str_num[2];
 	sprintf(str_num, "%d", noteId);
 	if(noteId < 10){
-		msg.buff[0] = 0; // first digit is 0
-		msg.buff[1] = str_num[0]; // second digit is the num 
+		// msg.buff[0] = 0; // first digit is 0
+		msg.buff[0] = str_num[0]; // second digit is the num 
 	}else{
 		msg.buff[0] = str_num[0];
 		msg.buff[1] = str_num[1];
