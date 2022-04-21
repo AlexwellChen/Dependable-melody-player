@@ -90,7 +90,8 @@ void committee_recv(Committee *self, int addr)
             // {
             //     SYNC(&generator, set_turn, 0);
             // }
-            ASYNC(&controller, startSound, 0);
+	        ASYNC(&controller, startSound, self->bpm);
+           
             break;
         }
         break;

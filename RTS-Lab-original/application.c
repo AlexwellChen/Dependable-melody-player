@@ -494,7 +494,9 @@ int judgePlay(Sound *self, int note)
 					break;
 				case SLAVE:
 					self->turn = 0;
+					break;
 			}
+			self->turn = 0;
 		}else{
 			switch(myMode){
 				case MASTER:
@@ -502,9 +504,10 @@ int judgePlay(Sound *self, int note)
 					break;
 				case SLAVE:
 					self->turn = 1;
+					break;
 			}
 		}
-			self->turn = 1;
+		
 		break;
 	case 3:
 		if (note % 3 == myRank)
@@ -519,12 +522,13 @@ void startSound(Controller *self, int arg)
 	// snprintf(strbuff, 100, "Controller play: %d\n", self->play);
 	// SCI_WRITE(&sci0, strbuff);
 	int state = SYNC(&committee, read_state, 0);
+	//ASYNC(&generator,set_turn,1);
 	// if (state == MASTER)
 	// {
 	// 	ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
-	// 	int ifPlay = SYNC(&generator, judgePlay, self->note);
-	// }
 	int ifPlay = SYNC(&generator, judgePlay, self->note);
+	// }
+	//int ifPlay = SYNC(&generator, judgePlay, self->note);
 	if (self->play == 0 || state == F_1 || state == F_2)
 		return;
 	SYNC(&generator, reset_gap, 0);
@@ -534,7 +538,7 @@ void startSound(Controller *self, int arg)
 	SYNC(&generator, change_period, period);
 
 	int tempo = beats[self->note];
-	sprintf(strbuff,"note in StartSound is: %d,Tempo is : %d\n",self->note,tempo);
+	sprintf(strbuff,"note in StartSound is: %d,bpm is : %d\n",self->note,self->bpm);
 	SCI_WRITE(&sci0, strbuff);
 	//	if(tempo>=2) SIO_WRITE(&sio0,0);
 
@@ -589,10 +593,11 @@ void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
 	ASYNC(&controller, toggle_led, self->bpm);
-	ASYNC(&controller, startSound, self->bpm);
 	int state = SYNC(&committee,read_state,0);
 	if(state==MASTER){
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+	}else if(state==SLAVE){
+	//	 ASYNC(&controller, startSound, 0);
 	}
 }
 
