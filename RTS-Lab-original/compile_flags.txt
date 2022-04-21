@@ -1,5 +1,10 @@
--I/Users/alexwell/Desktop/EDA423/Lab/RTS-Lab-original
--I/Users/alexwell/Desktop/EDA423/Lab/RTS-Lab-original/$(ProjectPath)
--I/Users/alexwell/Desktop/EDA423/Lab/RTS-Lab-original/$(ProjectPath)/device/inc
--I/Users/alexwell/Desktop/EDA423/Lab/RTS-Lab-original/$(ProjectPath)/driver/inc
+-Ic:\cseapp\CodeLite\tools\gcc-arm\arm-none-eabi\include\c++\9.2.1
+-Ic:\cseapp\CodeLite\tools\gcc-arm\arm-none-eabi\include\c++\9.2.1\arm-none-eabi
+-Ic:\cseapp\CodeLite\tools\gcc-arm\arm-none-eabi\include\c++\9.2.1\backward
+-Ic:\cseapp\CodeLite\tools\gcc-arm\lib\gcc\arm-none-eabi\9.2.1\include
+-Ic:\cseapp\CodeLite\tools\gcc-arm\lib\gcc\arm-none-eabi\9.2.1\include-fixed
+-Ic:\cseapp\CodeLite\tools\gcc-arm\arm-none-eabi\include
+-IE:\OPENME\EDA423\EDA423\RTS-Lab-original
+-IE:\OPENME\EDA423\EDA423\RTS-Lab-original\device\inc
+-IE:\OPENME\EDA423\EDA423\RTS-Lab-original\driver\inc
 -DSTM32F40_41xxx

@@ -9,7 +9,7 @@ extern SysIO sio0;
 extern Can can0;
 extern Watchdog watchdog;
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -72,7 +72,7 @@ void committee_recv(Committee *self, int addr)
         switch (msg.msgId)
         {
         case 119:
-            note = (int)msg.buff[0];
+            note = atoi(msg.buff);
             SCI_WRITE(&sci0, note);
             SCI_WRITE(&sci0, "\n");
             if (self->boardNum == 2 && note % 2 == 1)
