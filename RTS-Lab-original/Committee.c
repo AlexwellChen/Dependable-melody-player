@@ -9,7 +9,7 @@ extern SysIO sio0;
 extern Can can0;
 extern Watchdog watchdog;
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -39,7 +39,7 @@ void committee_recv(Committee *self, int addr)
             self->mode = SLAVE;
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
-            ASYNC(&watchdog, monitor, 0);
+            //ASYNC(&watchdog, monitor, 0);
             self->leaderRank = msg.nodeId;
         }
         case 126:
@@ -75,20 +75,21 @@ void committee_recv(Committee *self, int addr)
             note = atoi(msg.buff);
             sprintf(strbuff,"Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
-            if (self->boardNum == 2 && note % 2 == 1)
-            {
-                SYNC(&controller, change_note, note);
-                SYNC(&generator, set_turn, 1);
-            }
-            else if (self->boardNum == 3 && note % 3 == self->myRank)
-            {
-                SYNC(&controller, change_note, note);
-                SYNC(&generator, set_turn, 1);
-            }
-            else
-            {
-                SYNC(&generator, set_turn, 0);
-            }
+            SYNC(&controller, change_note, note);;
+            // if (self->boardNum == 2 && note % 2 == 1)
+            // {
+            //    // SYNC(&controller, change_note, note);
+            //     SYNC(&generator, set_turn, 1);
+            // }
+            // else if (self->boardNum == 3 && note % 3 == self->myRank)
+            // {
+            //     //SYNC(&controller, change_note, note);
+            //     SYNC(&generator, set_turn, 1);
+            // }
+            // else
+            // {
+            //     SYNC(&generator, set_turn, 0);
+            // }
             ASYNC(&controller, startSound, 0);
             break;
         }
