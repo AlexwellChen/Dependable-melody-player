@@ -477,6 +477,7 @@ int judgePlay(Sound *self, int note)
 {
 	int num = SYNC(&committee, getBoardNum, 0);
 	int myRank = SYNC(&committee, getMyRank, 0);
+	int myMode = SYNC(&committee, read_state, 0);
 	self->turn = 0;
 	switch (num)
 	{
@@ -486,7 +487,23 @@ int judgePlay(Sound *self, int note)
 		self->turn = 1;
 		break;
 	case 2:
-		if (note % 2 == 0)
+		if (note % 2 == 0){
+			switch(myMode){
+				case MASTER:
+					self->turn = 1;
+					break;
+				case SLAVE:
+					self->turn = 0;
+			}
+		}else{
+			switch(myMode){
+				case MASTER:
+					self->turn = 0;
+					break;
+				case SLAVE:
+					self->turn = 1;
+			}
+		}
 			self->turn = 1;
 		break;
 	case 3:
