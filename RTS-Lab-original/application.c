@@ -595,7 +595,8 @@ void pause_c(Controller *self, int arg)
 	ASYNC(&controller, toggle_led, self->bpm);
 	int state = SYNC(&committee,read_state,0);
 	if(state==MASTER){
-		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+		SYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+		ASYNC(&controller, startSound, 0);
 	}else if(state==SLAVE){
 	//	 ASYNC(&controller, startSound, 0);
 	}

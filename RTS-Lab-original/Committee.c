@@ -9,7 +9,7 @@ extern SysIO sio0;
 extern Can can0;
 extern Watchdog watchdog;
 
-Committee committee = {initObject(), 1, 1, -1, INIT, 1};
+Committee committee = {initObject(), 1, 0, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -90,7 +90,7 @@ void committee_recv(Committee *self, int addr)
             // {
             //     SYNC(&generator, set_turn, 0);
             // }
-	        ASYNC(&controller, startSound, self->bpm);
+	        ASYNC(&controller, startSound, SYNC(&controller, getBpm, 0));
            
             break;
         }
