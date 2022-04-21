@@ -314,8 +314,8 @@ void receiver(App *self, int unused)
 			ASYNC(&generator, mute, 0);
 			break;
 		case 4:
-			SYNC(&generator, pause, 0);
-			SYNC(&controller, pause_c, 0);
+			 SYNC(&generator, pause, 0);
+			// SYNC(&controller, pause_c, 0);
 			break;
 		case 5:
 			// positive key
@@ -517,6 +517,8 @@ void startSound(Controller *self, int arg)
 	SYNC(&generator, change_period, period);
 
 	int tempo = beats[self->note];
+	sprintf(strbuff,"Tempo is : %d\n",tempo);
+	SCI_WRITE(&sci0, strbuff);
 	//	if(tempo>=2) SIO_WRITE(&sio0,0);
 
 	float interval = 60.0 / (float)self->bpm;

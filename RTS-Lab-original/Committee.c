@@ -9,7 +9,7 @@ extern SysIO sio0;
 extern Can can0;
 extern Watchdog watchdog;
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -73,8 +73,8 @@ void committee_recv(Committee *self, int addr)
         {
         case 119:
             note = atoi(msg.buff);
-            sprintf(strbuff,"Note is: %d ", note);
-            SCI_WRITE(&sci0, "\n");
+            sprintf(strbuff,"Note is: %d \n", note);
+            SCI_WRITE(&sci0, strbuff);
             if (self->boardNum == 2 && note % 2 == 1)
             {
                 SYNC(&controller, change_note, note);
@@ -89,7 +89,7 @@ void committee_recv(Committee *self, int addr)
             {
                 SYNC(&generator, set_turn, 0);
             }
-            ASYNC(&controller, startSound, 0);
+            //ASYNC(&controller, startSound, 0);
             break;
         }
         break;
@@ -256,8 +256,8 @@ void compete(Committee *self, int unused)
 {
     // Totoal 1 second, could it be shorter?
     ASYNC(&committee, IorS_to_W, 0);
-    AFTER(MSEC(50), &committee, send_GetLeadership_msg, 0);
-    AFTER(MSEC(100), &committee, change_StateAfterCompete, 0);
+    AFTER(MSEC(5), &committee, send_GetLeadership_msg, 0);
+    AFTER(MSEC(10), &committee, change_StateAfterCompete, 0);
 }
 
 void setBoardNum(Committee *self, int arg)
