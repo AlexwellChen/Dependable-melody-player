@@ -18,7 +18,7 @@ void watchdog_recv(Watchdog *self, int addr)
     CANMsg msg = *(CANMsg *)addr;
     char strbuff[100];
     snprintf(strbuff, 100, "Watchdog MSGID: %d\n", msg.msgId);
-    // SCI_WRITE(&sci0, strbuff);
+    SCI_WRITE(&sci0, strbuff);
     int mode = SYNC(&committee, read_state, 0);
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int myRank = SYNC(&committee, getMyRank, 0);
@@ -28,48 +28,68 @@ void watchdog_recv(Watchdog *self, int addr)
     switch (msg.msgId)
     {
     case 64:
-        now = T_SAMPLE(&self->timer);
-        if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
-        {
-            self->networkState[msg.nodeId] = MASTER;
-        }
+        // now = T_SAMPLE(&self->timer);
+        // if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        // {
+        //     self->networkState[msg.nodeId] = MASTER;
+        // }
+        self->networkState[msg.nodeId] = MASTER;
         break;
     case 63:
         // update the state array (in a given time interval)
-        now = T_SAMPLE(&self->timer);
-        if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
-        {
-            self->networkState[msg.nodeId] = SLAVE;
-        }
+        // now = T_SAMPLE(&self->timer);
+        // if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        // {
+        //     self->networkState[msg.nodeId] = SLAVE;
+        // }
+        self->networkState[msg.nodeId] = SLAVE;
         break;
     case 62: // Failure F2
-        now = T_SAMPLE(&self->timer);
-        if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        // now = T_SAMPLE(&self->timer);
+        // if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        // {
+        //     self->networkState[msg.nodeId] = F_2;
+        //     ASYNC(&controller, passive_backup,0);
+        //     if (mode == F_3)
+        //     {
+        //         // Used for F_3 enter |F_3|F_2|F_1|
+        //         self->networkState[myRank] = SLAVE;
+        //     }
+        // }
+
+        if (mode == F_3)
         {
-            self->networkState[msg.nodeId] = F_2;
-            ASYNC(&controller, passive_backup,0);
-            if (mode == F_3)
-            {
-                // Used for F_3 enter |F_3|F_2|F_1|
-                self->networkState[myRank] = SLAVE;
-            }
+            // Used for F_3 enter |F_3|F_2|F_1|
+            self->networkState[myRank] = SLAVE;
         }
+        self->networkState[msg.nodeId] = F_2;
+        ASYNC(&controller, passive_backup, 0);
         // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 61: // Failure F1
-        now = T_SAMPLE(&self->timer);
-        if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        // now = T_SAMPLE(&self->timer);
+        // if ((now - self->send_time) < MSEC(SNOOP_INTERVAL))
+        // {
+        //     self->networkState[msg.nodeId] = F_1;
+        //     ASYNC(&controller, passive_backup, 0);
+        //     if (mode == F_3)
+        //     {
+        //         // Used for F_3 enter |F_3|F_2|F_1|
+        //         self->networkState[myRank] = SLAVE;
+        //         // Set to Slave, in check stage the boardNum will change to 1,
+        //         // and then the committee->mode will change to Slave.
+        //     }
+        // }
+        
+        if (mode == F_3)
         {
-            self->networkState[msg.nodeId] = F_1;
-            ASYNC(&controller, passive_backup,0);
-            if (mode == F_3)
-            {
-                // Used for F_3 enter |F_3|F_2|F_1|
-                self->networkState[myRank] = SLAVE;
-                // Set to Slave, in check stage the boardNum will change to 1,
-                // and then the committee->mode will change to Slave.
-            }
+            // Used for F_3 enter |F_3|F_2|F_1|
+            self->networkState[myRank] = SLAVE;
+            // Set to Slave, in check stage the boardNum will change to 1,
+            // and then the committee->mode will change to Slave.
         }
+        self->networkState[msg.nodeId] = F_1;
+        ASYNC(&controller, passive_backup, 0);
         // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 60: // New member join
@@ -95,13 +115,13 @@ void check(Watchdog *self, int unused)
     int boardNum = 0;
     int masterNum = 0;
     int myMode = SYNC(&committee, read_state, 0);
-    int previous_Bnum = SYNC(&committee,getBoardNum,0);
+    int previous_Bnum = SYNC(&committee, getBoardNum, 0);
     for (int i = 0; i < 3; i++)
     {
         if (self->networkState[i] == DEACTIVE)
         {
             cntDeactive++;
-            self->networkState[i] = F_3; // passive enter F3         
+            self->networkState[i] = F_3; // passive enter F3
             // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
         if (self->networkState[i] == MASTER)
@@ -114,8 +134,9 @@ void check(Watchdog *self, int unused)
             boardNum++;
         }
     }
-    if(boardNum<previous_Bnum){
-         ASYNC(&controller, passive_backup,0);
+    if (boardNum < previous_Bnum)
+    {
+        ASYNC(&controller, passive_backup, 0);
     }
     ASYNC(&committee, setBoardNum, boardNum);
 
@@ -155,10 +176,11 @@ void check(Watchdog *self, int unused)
         // Is it possible get a FFF here?
     }
 
-    if (self->monitor_flag)
-    {
-        ASYNC(self, monitor, 0);
-    }
+    // if (self->monitor_flag)
+    // {
+    //     ASYNC(self, monitor, 0);
+    // }
+    ASYNC(self, monitor, 0);
 }
 void monitor(Watchdog *self, int unused)
 {

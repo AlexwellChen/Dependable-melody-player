@@ -5,7 +5,7 @@
 
 #define DEACTIVE -2
 #define ACTIVE 6
-#define SNOOP_INTERVAL 5000
+#define SNOOP_INTERVAL 1000
 typedef struct
 {
 	Object super;

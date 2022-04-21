@@ -314,8 +314,8 @@ void receiver(App *self, int unused)
 			ASYNC(&generator, mute, 0);
 			break;
 		case 4:
-			 SYNC(&generator, pause, 0);
-			// SYNC(&controller, pause_c, 0);
+			SYNC(&generator, pause, 0);
+			SYNC(&controller, pause_c, 0);
 			break;
 		case 5:
 			// positive key
