@@ -283,7 +283,7 @@ void receiver(App *self, int unused)
 	
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
-	if((msg.msgId >=100 || msg.msgId < 20) && msg.msgId != 119){ // Mask watchdog CAN message output
+	if((msg.msgId >=100 || msg.msgId < 20) ){ // Mask watchdog CAN message output
 		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
 		char strbuff[100];
@@ -314,8 +314,8 @@ void receiver(App *self, int unused)
 			ASYNC(&generator, mute, 0);
 			break;
 		case 4:
-			SYNC(&generator, pause, 0);
-			SYNC(&controller, pause_c, 0);
+			// SYNC(&generator, pause, 0);
+			// SYNC(&controller, pause_c, 0);
 			break;
 		case 5:
 			// positive key
@@ -411,12 +411,16 @@ void play(Sound *self, int arg)
 {
 
 	self->flag = !self->flag;
-	if (self->gap || !self->turn)
+	char strbuff[100];
+	//sprintf(strbuff,"Turn is %d\n",self->turn);
+	//SCI_WRITE(&sci0, strbuff);
+	if (self->gap)
 	{
 		*DAC_port = 0x00;
+		return;
 	}
-	else
-	{
+
+	if(self->turn){
 		if (self->flag)
 		{
 			*DAC_port = self->volume;
@@ -426,7 +430,7 @@ void play(Sound *self, int arg)
 			*DAC_port = 0x00;
 		}
 	}
-	if (self->play)
+	if (self->play&&self->turn)
 	{
 		if (self->deadline_enabled)
 		{
@@ -571,7 +575,9 @@ int getBpm(Controller *self, int unused)
 {
 	return self->bpm;
 }
-
+void set_play(Sound* self,int play){
+	self->play = play;
+}
 void pause(Sound *self, int arg)
 {
 	self->play = !self->play;
@@ -592,9 +598,10 @@ void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
 	ASYNC(&controller, toggle_led, self->bpm);
-	ASYNC(&controller, startSound, 0);
+	
 	int state = SYNC(&committee,read_state,0);
 	if(state==MASTER){
+		ASYNC(&controller, startSound, 0);
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
 }

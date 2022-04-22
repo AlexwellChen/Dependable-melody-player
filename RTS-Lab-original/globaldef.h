@@ -96,6 +96,12 @@ void volume_control(Sound *, int);
 void pause(Sound *, int);
 int getMute(Sound *, int);
 void set_turn(Sound *, int);
+void set_play(Sound*,int);
+int judgePlay(Sound *self, int note);
+void reset_gap(Sound*, int);
+void gap(Sound*, int);
+void change_period(Sound*,int);
+void play(Sound*,int);
 
 void startSound(Controller *, int);
 int getBpm(Controller *, int);

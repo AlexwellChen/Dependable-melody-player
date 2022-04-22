@@ -8,8 +8,11 @@ extern Serial sci0;
 extern SysIO sio0;
 extern Can can0;
 extern Watchdog watchdog;
+extern periods[];
+extern beats[];
+extern myIndex[];
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -19,7 +22,8 @@ void committee_recv(Committee *self, int addr)
 		snprintf(strbuff, 100, "Committe MSGID: %d\n", msg.msgId);
 		SCI_WRITE(&sci0, strbuff);
 	}
-    int note;
+    int note,bpm,offset, period,tempo,turn;
+    int Bnum, myRank;
     switch (self->mode)
     {
     case INIT:
@@ -37,6 +41,9 @@ void committee_recv(Committee *self, int addr)
         {
             // For initMode function
             self->mode = SLAVE;
+            ASYNC(&generator,set_play,1);
+           
+             
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
             //ASYNC(&watchdog, monitor, 0);
@@ -75,22 +82,40 @@ void committee_recv(Committee *self, int addr)
             note = atoi(msg.buff);
             sprintf(strbuff,"Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
-           // ASYNC(&controller, change_note, note);
-            // if (self->boardNum == 2 && note % 2 == 1)
-            // {
-            //    // SYNC(&controller, change_note, note);
-            //     SYNC(&generator, set_turn, 1);
-            // }
-            // else if (self->boardNum == 3 && note % 3 == self->myRank)
-            // {
-            //     //SYNC(&controller, change_note, note);
-            //     SYNC(&generator, set_turn, 1);
-            // }
-            // else
-            // {
-            //     SYNC(&generator, set_turn, 0);
-            // }
+            char strbuff[100];
+
+            Bnum = SYNC(&committee, getBoardNum, 0);
+            myRank = SYNC(&committee, getMyRank, 0);
+        
            
+            if((note%2==1)){
+                turn = 1;
+            }else{
+                turn =0;
+            }
+            if(turn==1){
+                SYNC(&generator, set_turn,1);
+                
+            }
+            else {
+                SYNC(&generator, set_turn,0);
+            }
+	       
+	        SYNC(&generator, reset_gap, 0);
+            
+	        offset =  5 + 5;
+	        period = periods[myIndex[note] + offset] * 1000000;
+	        SYNC(&generator, change_period, period);
+            ASYNC(&generator, play, 0);
+            bpm = SYNC(&controller,getBpm,0);
+	        tempo = beats[note];
+	        sprintf(strbuff,"note in 119  is: %d,bpm is : %d,Turn is %d\n",note,bpm,turn);
+	        SCI_WRITE(&sci0, strbuff);
+            
+	        float interval = 60.0 / (float)bpm;
+
+	        SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
+            
             break;
         }
         break;
