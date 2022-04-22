@@ -522,11 +522,11 @@ void startSound(Controller *self, int arg)
 	// SCI_WRITE(&sci0, strbuff);
 	int state = SYNC(&committee, read_state, 0);
 	//ASYNC(&generator,set_turn,1);
-	// if (state == MASTER)
-	// {
-	// 	ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
-	int ifPlay = SYNC(&generator, judgePlay, self->note);
-	// }
+	if (state == MASTER)
+	{
+		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+		int ifPlay = SYNC(&generator, judgePlay, self->note);
+	}
 	//int ifPlay = SYNC(&generator, judgePlay, self->note);
 	if (self->play == 0 || state == F_1 || state == F_2)
 		return;
@@ -592,7 +592,6 @@ void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
 	ASYNC(&controller, toggle_led, self->bpm);
-	ASYNC(&controller, startSound, 0);
 	int state = SYNC(&committee,read_state,0);
 	if(state==MASTER){
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
