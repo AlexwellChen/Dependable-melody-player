@@ -597,6 +597,9 @@ void pause_c(Controller *self, int arg)
 	if(state==MASTER){
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
+	if(self->play==1){
+		ASYNC(self,replay,0);
+	}
 }
 
 void change_key(Controller *self, int num)
@@ -650,10 +653,10 @@ void send_key_msg(App *self, int num)
 		msg.msgId = 5;
 	}
 	msg.nodeId = self->myRank;
-	char str_num[1];
-	sprintf(str_num, "%d", abs(num));
-	msg.length = 1;
-	msg.buff[0] = str_num[0];
+	// char str_num[1];
+	// sprintf(str_num, "%d", abs(num));
+	// msg.length = 1;
+	msg.buff[0] = num;
 	// msg.buff[1] = 0;
 	CAN_SEND(&can0, &msg);
 }
@@ -665,11 +668,12 @@ void send_bpm_msg(App *self, int num)
 	sprintf(str_num, "%d", num);
 	msg.msgId = 7;
 	msg.nodeId = self->myRank;
-	msg.length = 3;
-	msg.buff[0] = str_num[0];
-	msg.buff[1] = str_num[1];
-	if (num > 99)
-		msg.buff[2] = str_num[2];
+	// msg.length = 3;
+	// msg.buff[0] = str_num[0];
+	// msg.buff[1] = str_num[1];
+	// if (num > 99)
+	// 	msg.buff[2] = str_num[2];
+	msg.buff[0] = num;
 	CAN_SEND(&can0, &msg);
 }
 
@@ -692,15 +696,16 @@ void send_note_msg(App *self, int noteId)
 	msg.msgId = 119;
 	msg.nodeId = self->myRank;
 	msg.length = 2;
-	char str_num[2];
-	sprintf(str_num, "%d", noteId);
-	if(noteId < 10){
-		// msg.buff[0] = 0; // first digit is 0
-		msg.buff[0] = str_num[0]; // second digit is the num 
-	}else{
-		msg.buff[0] = str_num[0];
-		msg.buff[1] = str_num[1];
-	}
+	// char str_num[2];
+	// sprintf(str_num, "%d", noteId);
+	// if(noteId < 10){
+	// 	// msg.buff[0] = 0; // first digit is 0
+	// 	msg.buff[0] = str_num[0]; // second digit is the num 
+	// }else{
+	// 	msg.buff[0] = str_num[0];
+	// 	msg.buff[1] = str_num[1];
+	// }
+	msg.buff[0] = noteId;
 	CAN_SEND(&can0, &msg);
 	SCI_WRITE(&sci0, "Send 119\n");
 }
