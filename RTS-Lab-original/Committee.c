@@ -50,7 +50,7 @@ void committee_recv(Committee *self, int addr)
         {
             // For initBoardNum function
             SCI_WRITE(&sci0, "----------------Recv msgId 126---------------------\n");
-            int boardsNum_recv = atoi(msg.buff);
+            int boardsNum_recv = msg.buff[0];
             if (boardsNum_recv > self->boardNum)
             {
                 self->boardNum = boardsNum_recv;
@@ -76,16 +76,14 @@ void committee_recv(Committee *self, int addr)
         switch (msg.msgId)
         {
         case 119:
-           note = msg.buff[0];
+            note = atoi(msg.buff);
             sprintf(strbuff,"Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
            // ASYNC(&controller, change_note, note);
           
             turn =0 ;
-            // Bnum = SYNC(&committee,getBoardNum,0);
-            // myRank = SYNC(&committee,getMyRank,0);
-            Bnum = self->boardNum;
-            myRank = self->myRank;
+            Bnum = SYNC(&committee,getBoardNum,0);
+            myRank = SYNC(&committee,getMyRank,0);
             if((note%2==1&&Bnum==2)||(Bnum==3&&note%3==myRank)){
                 turn = 1;
                 ASYNC(&generator,set_turn,1);
@@ -98,7 +96,8 @@ void committee_recv(Committee *self, int addr)
             period = periods[myIndex[note] + offset] * 1000000;
             SYNC(&generator, change_period, period); //safe
            
-            if(turn==1){       
+            if(turn==1){
+               
                 tempo = beats[note];
                 bpm = SYNC(&controller,getBpm,0);
                 
@@ -153,10 +152,10 @@ void send_BoardNum_msg(Committee *self, int arg)
     SCI_WRITE(&sci0, strbuff);
     msg.nodeId = self->myRank;
     msg.msgId = 126;
-    char str_num[1];
-    sprintf(str_num, "%d", abs(self->boardNum));
+    // char str_num[1];
+    // sprintf(str_num, "%d", abs(self->boardNum));
     msg.length = 1;
-    msg.buff[0] = str_num[0];
+    msg.buff[0] = self->boardNum;
     CAN_SEND(&can0, &msg);
 }
 
@@ -236,7 +235,7 @@ void IorS_to_W(Committee *self, int arg)
 void IorS_to_M(Committee* self, int arg){
     self->mode = MASTER;
     self->leaderRank = self->myRank;
-    ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
+    
 }
 void change_StateAfterCompete(Committee *self, int arg)
 {

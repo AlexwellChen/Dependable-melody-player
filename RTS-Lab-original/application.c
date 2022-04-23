@@ -281,14 +281,14 @@ void setMode(App *self, int mode)
  */
 void receiver(App *self, int unused)
 {
-
+	char strbuff[100];
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
 	if ((msg.msgId >= 100 || msg.msgId < 20) && msg.msgId != 119)
 	{ // Mask watchdog CAN message output
 		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
-		char strbuff[100];
+		
 		snprintf(strbuff, 100, "ID: %d\n", msg.msgId);
 		SCI_WRITE(&sci0, strbuff);
 	}
@@ -321,16 +321,20 @@ void receiver(App *self, int unused)
 			break;
 		case 5:
 			// positive key
-			num = atoi(msg.buff);
+			num = msg.buff[0];
+			snprintf(strbuff, 100, "Key: %d\n", num);
+			SCI_WRITE(&sci0, strbuff);
 			SYNC(&controller, change_key, num);
 			break;
 		case 6:
 			// negative key
-			num = atoi(msg.buff);
+			num = msg.buff[0];
+			snprintf(strbuff, 100, "Key: %d\n", num);
+			SCI_WRITE(&sci0, strbuff);
 			SYNC(&controller, change_key, -num);
 			break;
 		case 7:
-			num = atoi(msg.buff);
+			num = msg.buff[0];
 			SYNC(&controller, change_bpm, num);
 			break;
 		case 8:
@@ -692,11 +696,11 @@ void send_key_msg(App *self, int num)
 		msg.msgId = 5;
 	}
 	msg.nodeId = self->myRank;
-	// char str_num[1];
-	// sprintf(str_num, "%d", abs(num));
-	// msg.length = 1;
-	msg.buff[0] = num;
-	// msg.buff[1] = 0;
+	char str_num;
+	sprintf(str_num, "%d", abs(num));
+	msg.length = 1;
+	msg.buff[0] = str_num;
+	// msg.buff[0] = num;
 	CAN_SEND(&can0, &msg);
 }
 
