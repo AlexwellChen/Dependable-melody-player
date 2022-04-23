@@ -388,7 +388,7 @@ void mute(Sound *self)
 	{
 		self->volume = self->prev_volume;
 		// Unlit the light when muted
-		SIO_WRITE(&sio0, 1);
+		SIO_WRITE(&sio0, 0);
 	}
 	else
 	{
@@ -397,7 +397,7 @@ void mute(Sound *self)
 		// SCI_WRITE(&sci0, "Board is muted\n");
 		// Lit when unmuted
 		ASYNC(&app, print_mute_state, 0);
-		SIO_WRITE(&sio0, 0);
+		SIO_WRITE(&sio0, 1);
 	}
 }
 
