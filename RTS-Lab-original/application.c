@@ -559,7 +559,7 @@ void startSound(Controller *self, int arg)
 		// int ifPlay = SYNC(&generator, judgePlay, self->note);
 	}
 	int ifPlay = SYNC(&generator, judgePlay, self->note);
-	if (self->play == 0 || state == F_1 || state == F_2)
+	if (state == F_1 || state == F_2)
 		return;
 
 	int offset = self->key + 5 + 5;
