@@ -167,7 +167,11 @@ void check(Watchdog *self, int unused)
      */
     if (masterNum == 0)
     { // There is no Master in current network
-        ASYNC(&committee, IorS_to_M, 0);
+        if(boardNum == 1 && myMode == SLAVE){
+            ASYNC(&committee, D_to_F3, 0);
+        }else{
+            ASYNC(&committee, IorS_to_M, 0);
+        }
         // Is it possible get a FFF here?
     }
     // SYNC(&watchdog, watchdogDebugOutput,0);
