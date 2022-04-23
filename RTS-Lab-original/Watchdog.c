@@ -136,7 +136,7 @@ void check(Watchdog *self, int unused)
         {
             boardNum++;
         }
-        self->networkStateforCheck[i] = self->networkState[i]
+        self->networkStateforCheck[i] = self->networkState[i];
     }
    
     if (boardNum < previous_Bnum)
