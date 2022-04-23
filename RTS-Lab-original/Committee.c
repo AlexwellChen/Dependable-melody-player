@@ -154,7 +154,7 @@ void send_BoardNum_msg(Committee *self, int arg)
     msg.msgId = 126;
     // char str_num[1];
     // sprintf(str_num, "%d", abs(self->boardNum));
-    msg.length = 1;
+    // msg.length = 2;
     msg.buff[0] = self->boardNum;
     CAN_SEND(&can0, &msg);
 }
@@ -235,7 +235,7 @@ void IorS_to_W(Committee *self, int arg)
 void IorS_to_M(Committee* self, int arg){
     self->mode = MASTER;
     self->leaderRank = self->myRank;
-    
+    ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
 }
 void change_StateAfterCompete(Committee *self, int arg)
 {
