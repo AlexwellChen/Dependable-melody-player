@@ -136,8 +136,7 @@ void check(Watchdog *self, int unused)
         {
             boardNum++;
         }
-        snprintf(strbuff, 100, "board %d mode: %d\n", i, self->networkState[i]);
-        SCI_WRITE(&sci0, strbuff);
+        self->networkStateforCheck[i] = self->networkState[i]
     }
    
     if (boardNum < previous_Bnum)
@@ -168,8 +167,10 @@ void check(Watchdog *self, int unused)
     if (masterNum == 0)
     { // There is no Master in current network
         if(boardNum == 1 && myMode == SLAVE){
-            ASYNC(&committee, D_to_F3, 0);
-        }else if(myMode != F_1 || myMode != F_2 || myMode != F_3){
+            // ASYNC(&committee, D_to_F3, 0);
+        }else if(myMode != F_1 && myMode != F_2 && myMode != F_3){
+            snprintf(strbuff, 100, "board mode: %d\n", myMode);
+            SCI_WRITE(&sci0, strbuff);
             ASYNC(&committee, IorS_to_M, 0);
         }
         // Is it possible get a FFF here?
@@ -293,7 +294,7 @@ void watchdogDebugOutput(Watchdog *self, int arg)
     {
         snprintf(strbuff, 100, "board %d mode: ", i);
         SCI_WRITE(&sci0, strbuff);
-        switch (self->networkState[i])
+        switch (self->networkStateforCheck[i])
         {
         case 0:
             /* code */

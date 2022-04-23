@@ -10,6 +10,7 @@ typedef struct
 {
 	Object super;
 	int networkState[3];
+    int networkStateforCheck[3];
     Timer timer;
     Time send_time;
     int monitor_flag;
