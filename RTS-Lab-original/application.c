@@ -548,7 +548,7 @@ void startSound(Controller *self, int arg)
 	ASYNC(&generator, judgePlay, self->note);
 	if (self->play == 0 || state == F_1 || state == F_2)
 		return;
-	ASYNC(&generator, reset_gap, 0);
+	
 
 	int offset = self->key + 5 + 5;
 	int period = periods[myIndex[self->note] + offset] * 1000000;
@@ -574,7 +574,8 @@ void startSound(Controller *self, int arg)
 	Option 1: Change myRank dynamically.
 	Option 2: Change play condition.
 	*/
-
+	ASYNC(&generator, reset_gap, 0);
+	ASYNC(&generator, generateTone, 0);
 	SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
 
 	 if (state == MASTER)
@@ -604,7 +605,7 @@ void pause(Sound *self, int arg)
 	{
 		SCI_WRITE(&sci0, "Playing \n");
 
-		ASYNC(&generator, play, 0);
+		// ASYNC(&generator, play, 0);
 		SIO_WRITE(&sio0, 1);
 	}
 	else
