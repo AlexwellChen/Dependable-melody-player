@@ -107,6 +107,7 @@ Controller controller = {initObject(), 0, 0, 0, 120, 0, 0};
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app, user_call_back);
 Can can0 = initCan(CAN_PORT0, &app, receiver);
+
 extern Committee committee;
 extern Watchdog watchdog;
 
@@ -283,7 +284,7 @@ void receiver(App *self, int unused)
 	
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
-	if((msg.msgId >=100 || msg.msgId < 20) && msg.msgId != 119){ // Mask watchdog CAN message output
+	if((msg.msgId >=100 || msg.msgId < 20)&&msg.msgId!=119){ // Mask watchdog CAN message output
 		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
 		char strbuff[100];
@@ -314,8 +315,8 @@ void receiver(App *self, int unused)
 			ASYNC(&generator, mute, 0);
 			break;
 		case 4:
-			SYNC(&generator, pause, 0);
-			SYNC(&controller, pause_c, 0);
+			// SYNC(&generator, pause, 0);
+			// SYNC(&controller, pause_c, 0);
 			break;
 		case 5:
 			// positive key
@@ -407,6 +408,23 @@ void gap(Sound *self, int arg)
 {
 	self->gap = 1;
 }
+int readturn(Sound*self, int num){
+	 return self->turn;
+}
+void generateTone(Sound *tone, int unused) {
+	int half_period = tone->period;  //in microsecond
+	char strbuff[100];
+	// sprintf(strbuff,"In generateTone, period is:%d,selfturn: %d\n",tone->period,tone->turn);
+    //SCI_WRITE(&sci0, strbuff);
+	if(*DAC_port ==tone->volume) *DAC_port = 0;
+	else *DAC_port =tone->volume;
+	if(tone->gap == 0&&tone->turn==1){  //exeFlag controls a single tone, ifStop controls the whole tune
+		AFTER(USEC(half_period), tone, generateTone, unused);
+	}else{
+		return;
+	}
+}
+
 void play(Sound *self, int arg)
 {
 
@@ -527,17 +545,17 @@ void startSound(Controller *self, int arg)
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 		int ifPlay = SYNC(&generator, judgePlay, self->note);
 	}
-	//int ifPlay = SYNC(&generator, judgePlay, self->note);
+	ASYNC(&generator, judgePlay, self->note);
 	if (self->play == 0 || state == F_1 || state == F_2)
 		return;
-	SYNC(&generator, reset_gap, 0);
+	ASYNC(&generator, reset_gap, 0);
 
 	int offset = self->key + 5 + 5;
 	int period = periods[myIndex[self->note] + offset] * 1000000;
-	SYNC(&generator, change_period, period);
+	ASYNC(&generator, change_period, period);
 
 	int tempo = beats[self->note];
-	sprintf(strbuff,"note in StartSound is: %d,bpm is : %d\n",self->note,self->bpm);
+	sprintf(strbuff,"note in StartSound is: %d,bpm is : %d Turn is %d\n",self->note,self->bpm);
 	SCI_WRITE(&sci0, strbuff);
 	//	if(tempo>=2) SIO_WRITE(&sio0,0);
 
@@ -559,18 +577,25 @@ void startSound(Controller *self, int arg)
 
 	SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
 
-	// if (state == MASTER)
-	// {
+	 if (state == MASTER)
+	 {
 		self->note = (self->note + 1) % 32;
 		// only master repeats calling itself
 		SEND(MSEC(tempo * 500 * interval), MSEC(tempo * 250 * interval), self, startSound, self->bpm);
-	// }
+	 }else{
+		 return;
+	 }
 }
 
 int getBpm(Controller *self, int unused)
 {
 	return self->bpm;
 }
+int getKey(Controller *self, int unused)
+{
+	return self->key;
+}
+
 
 void pause(Sound *self, int arg)
 {
@@ -593,7 +618,9 @@ void pause_c(Controller *self, int arg)
 	self->play = !self->play;
 	ASYNC(&controller, toggle_led, self->bpm);
 	int state = SYNC(&committee,read_state,0);
+	
 	if(state==MASTER){
+		ASYNC(&controller, startSound, self->bpm);
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
 	if(self->play==1){

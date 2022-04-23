@@ -96,9 +96,16 @@ void volume_control(Sound *, int);
 void pause(Sound *, int);
 int getMute(Sound *, int);
 void set_turn(Sound *, int);
+void generateTone(Sound *, int );
+void change_period(Sound *, int);
+int judgePlay(Sound* ,int);
+void gap(Sound* ,int);
+void reset_gap(Sound* ,int);
+int readturn(Sound*, int);
 
 void startSound(Controller *, int);
 int getBpm(Controller *, int);
+int getKey(Controller *,int);
 void pause_c(Controller *, int);
 void set_print_flag(Controller *, int);
 void change_key(Controller *, int);
