@@ -322,15 +322,11 @@ void receiver(App *self, int unused)
 		case 5:
 			// positive key
 			num = msg.buff[0];
-			snprintf(strbuff, 100, "Key: %d\n", num);
-			SCI_WRITE(&sci0, strbuff);
 			SYNC(&controller, change_key, num);
 			break;
 		case 6:
 			// negative key
 			num = msg.buff[0];
-			snprintf(strbuff, 100, "Key: %d\n", num);
-			SCI_WRITE(&sci0, strbuff);
 			SYNC(&controller, change_key, -num);
 			break;
 		case 7:
@@ -571,8 +567,8 @@ void startSound(Controller *self, int arg)
 	ASYNC(&generator, change_period, period);
 
 	int tempo = beats[self->note];
-	sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
-	SCI_WRITE(&sci0, strbuff);
+	// sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
+	// SCI_WRITE(&sci0, strbuff);
 	//	if(tempo>=2) SIO_WRITE(&sio0,0);
 	float interval = 60.0 / (float)self->bpm;
 	if (self->bpm != arg)
@@ -700,7 +696,7 @@ void send_key_msg(App *self, int num)
 	// sprintf(str_num, "%d", abs(num));
 	msg.length = 2;
 	// msg.buff[0] = str_num;
-	msg.buff[0] = num;
+	msg.buff[0] = abs(num);
 	CAN_SEND(&can0, &msg);
 }
 
@@ -750,7 +746,7 @@ void send_note_msg(App *self, int noteId)
 	// }
 	msg.buff[0] = noteId;
 	CAN_SEND(&can0, &msg);
-	SCI_WRITE(&sci0, "Send 119\n");
+	// SCI_WRITE(&sci0, "Send 119\n");
 }
 
 void set_print_flag(Controller *self, int num)

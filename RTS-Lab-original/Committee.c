@@ -12,17 +12,18 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1,1, -1, INIT, 1};
+Committee committee = {initObject(), 1, 0, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
     CANMsg msg = *(CANMsg *)addr;
     char strbuff[100];
-	if(msg.msgId != 119){
-		snprintf(strbuff, 100, "Committe MSGID: %d\n", msg.msgId);
-		SCI_WRITE(&sci0, strbuff);
-	}
-    int note,bpm,turn,tempo,offset,period,key,Bnum,myRank;
+    if (msg.msgId != 119)
+    {
+        snprintf(strbuff, 100, "Committe MSGID: %d\n", msg.msgId);
+        SCI_WRITE(&sci0, strbuff);
+    }
+    int note, bpm, turn, tempo, offset, period, key, Bnum, myRank;
     float interval;
     switch (self->mode)
     {
@@ -43,7 +44,7 @@ void committee_recv(Committee *self, int addr)
             self->mode = SLAVE;
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
-            //ASYNC(&watchdog, monitor, 0);
+            // ASYNC(&watchdog, monitor, 0);
             self->leaderRank = msg.nodeId;
         }
         case 126:
@@ -77,38 +78,42 @@ void committee_recv(Committee *self, int addr)
         {
         case 119:
             note = msg.buff[0];
-            sprintf(strbuff,"Note is: %d \n", note);
+            sprintf(strbuff, "Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
-           // ASYNC(&controller, change_note, note);
-          
-            turn =0 ;
-            Bnum =self->boardNum;
+            // ASYNC(&controller, change_note, note);
+
+            turn = 0;
+            Bnum = self->boardNum;
             myRank = self->myRank;
-            if((note%2==1&&Bnum==2)||(Bnum==3&&note%3==myRank)){
+            if ((note % 2 == 1 && Bnum == 2) || (Bnum == 3 && note % 3 == myRank))
+            {
                 turn = 1;
-                ASYNC(&generator,set_turn,1);
-            }else{
-                turn =0;
-                ASYNC(&generator,set_turn,0);
+                ASYNC(&generator, set_turn, 1);
             }
-            key = SYNC(&controller,getKey,0);
-            offset =key + 5 + 5;
+            else
+            {
+                turn = 0;
+                ASYNC(&generator, set_turn, 0);
+            }
+            key = SYNC(&controller, getKey, 0);
+            offset = key + 5 + 5;
             period = periods[myIndex[note] + offset] * 1000000;
-            SYNC(&generator, change_period, period); //safe
-           
-            if(turn==1){
-               
+            SYNC(&generator, change_period, period); // safe
+
+            if (turn == 1)
+            {
+
                 tempo = beats[note];
-                bpm = SYNC(&controller,getBpm,0);
-                
+                bpm = SYNC(&controller, getBpm, 0);
+
                 interval = 60.0 / (float)bpm;
-               
-                ASYNC(&generator,reset_gap,0);
+
+                ASYNC(&generator, reset_gap, 0);
                 ASYNC(&generator, generateTone, 0);
-                sprintf(strbuff,"note in 119 is: %d,period : %d,tempo%d ,Turn is %d\n",note,period,tempo,turn);
+                sprintf(strbuff, "note in 119 is: %d,period : %d,tempo%d ,Turn is %d\n", note, period, tempo, turn);
                 SCI_WRITE(&sci0, strbuff);
                 SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
-             }  
+            }
             break;
         }
         break;
@@ -169,7 +174,7 @@ void send_Detecting_msg(Committee *self, int num)
     msg.nodeId = self->myRank;
     msg.msgId = 122;
     CAN_SEND(&can0, &msg);
-    SCI_WRITE(&sci0,"CAN message send!\n");
+    SCI_WRITE(&sci0, "CAN message send!\n");
 }
 
 // NOT USED ANYMORE
@@ -232,10 +237,12 @@ void IorS_to_W(Committee *self, int arg)
     // Trying to get leadership from init mode or slave mode
     self->mode = WAITING;
 }
-void IorS_to_M(Committee* self, int arg){
+void IorS_to_M(Committee *self, int arg)
+{
     self->mode = MASTER;
     self->leaderRank = self->myRank;
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
+    SCI_WRITE(&sci0, "Claimed Leadership!\n");
 }
 void change_StateAfterCompete(Committee *self, int arg)
 {
@@ -243,7 +250,7 @@ void change_StateAfterCompete(Committee *self, int arg)
     {
         self->mode = MASTER;
         self->leaderRank = self->myRank;
-        //ASYNC(&watchdog, monitor, self->myRank);
+        // ASYNC(&watchdog, monitor, self->myRank);
         ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
         if (self->leaderRank == self->myRank && self->mode == MASTER)
         {
@@ -339,7 +346,8 @@ void recover_Failure1mode(Committee *self, int arg)
         self->mode = SLAVE;
 }
 
-void committeeDebugOutput(Committee * self, int arg){
+void committeeDebugOutput(Committee *self, int arg)
+{
     char strbuff[100];
     SCI_WRITE(&sci0, "Committee debug output:\n");
     snprintf(strbuff, 100, "boardNum: %d\nmyRank: %d\nleaderRank: %d\n", self->boardNum, self->myRank, self->leaderRank);
