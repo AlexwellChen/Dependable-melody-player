@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 1, -1, INIT, 1};
+Committee committee = {initObject(), 1, 0, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -65,10 +65,9 @@ void committee_recv(Committee *self, int addr)
     case MASTER:
         switch (msg.msgId)
         {
-        case 127:
-            self->mode = INIT;
+        case 123:
+            self->mode = SLAVE;
             SCI_WRITE(&sci0, "Leadership Void\n");
-            ASYNC(&app, setMode, INIT);
             break;
         }
         break;
@@ -242,6 +241,7 @@ void IorS_to_M(Committee *self, int arg)
     self->mode = MASTER;
     self->leaderRank = self->myRank;
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
+    ASYNC(&controller, startSound, SYNC(&controller, getBpm, 0));
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
 }
 void change_StateAfterCompete(Committee *self, int arg)

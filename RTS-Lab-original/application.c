@@ -635,7 +635,7 @@ void pause_c(Controller *self, int arg)
 	if (state == MASTER && self->play == 1)
 	{	
 		ASYNC(self, replay, 0);
-		ASYNC(&controller, startSound, self->bpm);
+		
 		// ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
 
