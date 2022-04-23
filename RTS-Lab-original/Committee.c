@@ -100,8 +100,6 @@ void committee_recv(Committee *self, int addr)
                
                 tempo = beats[note];
                 bpm = SYNC(&controller,getBpm,0);
-               
-                //	if(tempo>=2) SIO_WRITE(&sio0,0);
                 
                 interval = 60.0 / (float)bpm;
                
@@ -110,9 +108,7 @@ void committee_recv(Committee *self, int addr)
                 sprintf(strbuff,"note in 119 is: %d,period : %d,tempo%d ,Turn is %d\n",note,period,tempo,turn);
                 SCI_WRITE(&sci0, strbuff);
                 SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
-                  /* */
-             }
-            
+             }  
             break;
         }
         break;
@@ -235,6 +231,9 @@ void IorS_to_W(Committee *self, int arg)
 {
     // Trying to get leadership from init mode or slave mode
     self->mode = WAITING;
+}
+void IorS_to_M(Committee* self, int arg){
+    self->mode = MASTER;
 }
 void change_StateAfterCompete(Committee *self, int arg)
 {
