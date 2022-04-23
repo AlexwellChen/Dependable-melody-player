@@ -615,7 +615,7 @@ void pause(Sound *self, int arg)
 	self->play = !self->play;
 	if (self->play)
 	{
-		SCI_WRITE(&sci0, "Playing \n");
+		SCI_WRITE(&sci0, "Replaying \n");
 
 		// ASYNC(&generator, play, 0);
 		SIO_WRITE(&sio0, 1);
