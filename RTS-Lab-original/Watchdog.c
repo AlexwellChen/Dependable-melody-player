@@ -11,7 +11,7 @@ extern SysIO sio0;
 extern Can can0;
 extern Committee committee;
 
-Watchdog watchdog = {initObject(), {0}, initTimer(), 0, 1};
+Watchdog watchdog = {initObject(), {-2}, initTimer(), 0, 1};
 
 void watchdog_recv(Watchdog *self, int addr)
 {

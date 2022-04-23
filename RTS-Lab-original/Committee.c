@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 0, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -49,7 +49,7 @@ void committee_recv(Committee *self, int addr)
             if (self->watchdogCnt == 0)
             {
                 self->watchdogCnt++;
-                ASYNC(&watchdog, check, 0);
+                AFTER(MSEC(SNOOP_INTERVAL), &watchdog, check, 0);
                 SCI_WRITE(&sci0, "Watchdog start!\n");
             }
         }
@@ -254,8 +254,7 @@ void IorS_to_M(Committee *self, int arg)
     if (self->watchdogCnt == 0)
     {
         self->watchdogCnt++;
-        ASYNC(&watchdog, check, 0);
-        
+        AFTER(MSEC(SNOOP_INTERVAL), &watchdog, check, 0);
         SCI_WRITE(&sci0, "Watchdog start!\n");
     }
 }
