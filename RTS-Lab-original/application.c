@@ -698,7 +698,7 @@ void send_key_msg(App *self, int num)
 	msg.nodeId = self->myRank;
 	// char str_num;
 	// sprintf(str_num, "%d", abs(num));
-	// msg.length = 1;
+	msg.length = 2;
 	// msg.buff[0] = str_num;
 	msg.buff[0] = num;
 	CAN_SEND(&can0, &msg);
@@ -711,7 +711,7 @@ void send_bpm_msg(App *self, int num)
 	sprintf(str_num, "%d", num);
 	msg.msgId = 7;
 	msg.nodeId = self->myRank;
-	// msg.length = 3;
+	msg.length = 2;
 	// msg.buff[0] = str_num[0];
 	// msg.buff[1] = str_num[1];
 	// if (num > 99)
@@ -738,7 +738,7 @@ void send_note_msg(App *self, int noteId)
 	CANMsg msg;
 	msg.msgId = 119;
 	msg.nodeId = self->myRank;
-	// msg.length = 2;
+	msg.length = 2;
 	// char str_num[2];
 	// sprintf(str_num, "%d", noteId);
 	// if(noteId < 10){

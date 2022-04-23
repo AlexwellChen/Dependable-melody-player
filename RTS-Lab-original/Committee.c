@@ -154,7 +154,7 @@ void send_BoardNum_msg(Committee *self, int arg)
     msg.msgId = 126;
     // char str_num[1];
     // sprintf(str_num, "%d", abs(self->boardNum));
-    // msg.length = 2;
+    msg.length = 2;
     msg.buff[0] = self->boardNum;
     CAN_SEND(&can0, &msg);
 }
