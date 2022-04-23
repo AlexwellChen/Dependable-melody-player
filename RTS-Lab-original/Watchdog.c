@@ -117,8 +117,11 @@ void check(Watchdog *self, int unused)
     int masterNum = 0;
     int myMode = SYNC(&committee, read_state, 0);
     int previous_Bnum = SYNC(&committee, getBoardNum, 0);
+    char strbuff[50];
     for (int i = 0; i < 3; i++)
-    {
+    {   
+        snprintf(strbuff, 100, "board %d mode: %d\n", i, self->networkState[i]);
+        SCI_WRITE(&sci0, strbuff);
         if (self->networkState[i] == DEACTIVE)
         {
             cntDeactive++;
@@ -165,7 +168,7 @@ void check(Watchdog *self, int unused)
         //ASYNC(&committee, compete, 0);
         // Is it possible get a FFF here?
     }
-
+    // SYNC(&watchdog, watchdogDebugOutput,0);
     AFTER(MSEC(SNOOP_INTERVAL),self, check, 0);
     for (int i = 0; i < 3; i++)
     {
