@@ -629,7 +629,7 @@ void pause(Sound *self, int arg)
 void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
-	ASYNC(&controller, toggle_led, self->bpm);
+	// ASYNC(&controller, toggle_led, self->bpm);
 	int state = SYNC(&committee, read_state, 0);
 
 	if (state == MASTER && self->play == 1)

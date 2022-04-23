@@ -249,7 +249,7 @@ void IorS_to_M(Committee *self, int arg)
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
     ASYNC(&controller, startSound, SYNC(&controller, getBpm, 0));
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
-    
+    ASYNC(&controller, toggle_led, SYNC(&controller, getBpm, 0));
     ASYNC(&watchdog, monitor, 0);
     if (self->watchdogCnt == 0)
     {
