@@ -11,7 +11,7 @@ extern SysIO sio0;
 extern Can can0;
 extern Committee committee;
 
-Watchdog watchdog = {initObject(), {-2}, initTimer(), 0, 1};
+Watchdog watchdog = {initObject(), {-2, -2, -2}, initTimer(), 0, 1};
 
 void watchdog_recv(Watchdog *self, int addr)
 {
@@ -167,10 +167,11 @@ void check(Watchdog *self, int unused)
     }
 
     AFTER(MSEC(SNOOP_INTERVAL),self, check, 0);
-     for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 3; i++)
     {
         self->networkState[i] = DEACTIVE;
     }
+    self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
 }
 void monitor(Watchdog *self, int unused)
 {
@@ -205,7 +206,7 @@ void monitor(Watchdog *self, int unused)
     self->send_time = now;
 
     if(myMode==MASTER)
-        AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
+        AFTER(MSEC(SNOOP_INTERVAL*0.5), self, monitor, 0);
     // AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
 }
 
