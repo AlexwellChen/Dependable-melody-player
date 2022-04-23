@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1,0, -1, INIT, 1};
+Committee committee = {initObject(), 1,1, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -76,14 +76,14 @@ void committee_recv(Committee *self, int addr)
         switch (msg.msgId)
         {
         case 119:
-            note = atoi(msg.buff);
+            note = msg.buff[0];
             sprintf(strbuff,"Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
            // ASYNC(&controller, change_note, note);
           
             turn =0 ;
-            Bnum = SYNC(&committee,getBoardNum,0);
-            myRank = SYNC(&committee,getMyRank,0);
+            Bnum =self->boardNum;
+            myRank = self->myRank;
             if((note%2==1&&Bnum==2)||(Bnum==3&&note%3==myRank)){
                 turn = 1;
                 ASYNC(&generator,set_turn,1);
