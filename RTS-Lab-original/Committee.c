@@ -73,6 +73,7 @@ void committee_recv(Committee *self, int addr)
         {
         case 123:
             self->mode = SLAVE;
+            self->leaderRank = msg.nodeId;
             SCI_WRITE(&sci0, "Leadership Void\n");
             break;
         }

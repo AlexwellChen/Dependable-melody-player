@@ -492,12 +492,14 @@ int getVolume(Sound *self, int arg)
 
 void toggle_led(Controller *self, int arg)
 {
-	if (self->play == 0 || self->bpm != arg)
+	if (self->bpm != arg)
 		return;
 	SIO_TOGGLE(&sio0);
-
 	float interval = 60.0 / (float)self->bpm;
-	SEND(MSEC(500 * interval), MSEC(250 * interval), self, toggle_led, self->bpm);
+	if(SYNC(&committee, read_state, 0) == MASTER){
+		SEND(MSEC(500 * interval), MSEC(250 * interval), self, toggle_led, self->bpm);
+	}
+	
 }
 int judgePlay(Sound *self, int note)
 {
