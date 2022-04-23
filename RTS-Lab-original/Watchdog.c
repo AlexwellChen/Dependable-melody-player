@@ -64,7 +64,7 @@ void watchdog_recv(Watchdog *self, int addr)
             self->networkState[myRank] = SLAVE;
         }
         self->networkState[msg.nodeId] = F_2;
-        ASYNC(&controller, passive_backup, 0);
+        //ASYNC(&controller, passive_backup, 0);
         // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 61: // Failure F1
@@ -90,7 +90,7 @@ void watchdog_recv(Watchdog *self, int addr)
             // and then the committee->mode will change to Slave.
         }
         self->networkState[msg.nodeId] = F_1;
-        ASYNC(&controller, passive_backup, 0);
+        //ASYNC(&controller, passive_backup, 0);
         // ASYNC(&committee, setBoardNum, boardNum - 1);
         break;
     case 60: // New member join
@@ -120,8 +120,7 @@ void check(Watchdog *self, int unused)
     char strbuff[50];
     for (int i = 0; i < 3; i++)
     {   
-        snprintf(strbuff, 100, "board %d mode: %d\n", i, self->networkState[i]);
-        SCI_WRITE(&sci0, strbuff);
+       
         if (self->networkState[i] == DEACTIVE)
         {
             cntDeactive++;
@@ -137,7 +136,10 @@ void check(Watchdog *self, int unused)
         {
             boardNum++;
         }
+        snprintf(strbuff, 100, "board %d mode: %d\n", i, self->networkState[i]);
+        SCI_WRITE(&sci0, strbuff);
     }
+   
     if (boardNum < previous_Bnum)
     {
         ASYNC(&controller, passive_backup, 0);
@@ -165,7 +167,7 @@ void check(Watchdog *self, int unused)
      */
     if (masterNum == 0)
     { // There is no Master in current network
-        //ASYNC(&committee, compete, 0);
+        ASYNC(&committee, IorS_to_M, 0);
         // Is it possible get a FFF here?
     }
     // SYNC(&watchdog, watchdogDebugOutput,0);

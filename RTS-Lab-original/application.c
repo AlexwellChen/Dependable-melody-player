@@ -567,8 +567,8 @@ void startSound(Controller *self, int arg)
 	ASYNC(&generator, change_period, period);
 
 	int tempo = beats[self->note];
-	// sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
-	// SCI_WRITE(&sci0, strbuff);
+	sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
+	SCI_WRITE(&sci0, strbuff);
 	//	if(tempo>=2) SIO_WRITE(&sio0,0);
 	float interval = 60.0 / (float)self->bpm;
 	if (self->bpm != arg)
