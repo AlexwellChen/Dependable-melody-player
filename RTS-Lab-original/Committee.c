@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1, 0};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -46,11 +46,6 @@ void committee_recv(Committee *self, int addr)
             // TODO: SYNC(initWatchdog)
             // ASYNC(&watchdog, monitor, 0);
             self->leaderRank = msg.nodeId;
-            if (self->watchdogCnt == 0)
-            {
-                self->watchdogCnt++;
-                ASYNC(&watchdog, monitor, self->myRank);
-            }
         }
         case 126:
         {
@@ -248,11 +243,6 @@ void IorS_to_M(Committee *self, int arg)
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
     ASYNC(&controller, startSound, SYNC(&controller, getBpm, 0));
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
-    if (self->watchdogCnt == 0)
-    {
-        self->watchdogCnt++;
-        ASYNC(&watchdog, monitor, self->myRank);
-    }
 }
 void change_StateAfterCompete(Committee *self, int arg)
 {
