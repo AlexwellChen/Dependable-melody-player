@@ -54,7 +54,7 @@ ENABLE PRINTING TEMPO(For Master) or MUTE STATE (For Slave)
 
 － Press 'e' to enable/disable the function of printing tempo msg or mute state msg
 
-ENTER FAILURE MODE 1 
+ENTER FAILURE MODE 1
 
 - Press '1f' to enter failure mode 1
 
@@ -281,10 +281,11 @@ void setMode(App *self, int mode)
  */
 void receiver(App *self, int unused)
 {
-	
+
 	CANMsg msg;
 	CAN_RECEIVE(&can0, &msg);
-	if((msg.msgId >=100 || msg.msgId < 20)&&msg.msgId!=119){ // Mask watchdog CAN message output
+	if ((msg.msgId >= 100 || msg.msgId < 20) && msg.msgId != 119)
+	{ // Mask watchdog CAN message output
 		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
 		char strbuff[100];
@@ -386,7 +387,7 @@ void mute(Sound *self)
 	if (self->volume == 0)
 	{
 		self->volume = self->prev_volume;
-		//Unlit the light when muted
+		// Unlit the light when muted
 		SIO_WRITE(&sio0, 1);
 	}
 	else
@@ -394,7 +395,7 @@ void mute(Sound *self)
 		self->prev_volume = self->volume;
 		self->volume = 0;
 		// SCI_WRITE(&sci0, "Board is muted\n");
-		//Lit when unmuted
+		// Lit when unmuted
 		ASYNC(&app, print_mute_state, 0);
 		SIO_WRITE(&sio0, 0);
 	}
@@ -408,19 +409,26 @@ void gap(Sound *self, int arg)
 {
 	self->gap = 1;
 }
-int readturn(Sound*self, int num){
-	 return self->turn;
+int readturn(Sound *self, int num)
+{
+	return self->turn;
 }
-void generateTone(Sound *tone, int unused) {
-	int half_period = tone->period;  //in microsecond
+void generateTone(Sound *tone, int unused)
+{
+	int half_period = tone->period; // in microsecond
 	char strbuff[100];
 	// sprintf(strbuff,"In generateTone, period is:%d,selfturn: %d\n",tone->period,tone->turn);
-    //SCI_WRITE(&sci0, strbuff);
-	if(*DAC_port ==tone->volume) *DAC_port = 0;
-	else *DAC_port =tone->volume;
-	if(tone->gap == 0&&tone->turn==1){  //exeFlag controls a single tone, ifStop controls the whole tune
+	// SCI_WRITE(&sci0, strbuff);
+	if (*DAC_port == tone->volume)
+		*DAC_port = 0;
+	else
+		*DAC_port = tone->volume;
+	if (tone->gap == 0 && tone->turn == 1)
+	{ // exeFlag controls a single tone, ifStop controls the whole tune
 		AFTER(USEC(half_period), tone, generateTone, unused);
-	}else{
+	}
+	else
+	{
 		return;
 	}
 }
@@ -505,26 +513,31 @@ int judgePlay(Sound *self, int note)
 		self->turn = 1;
 		break;
 	case 2:
-		if (note % 2 == 0){
-			switch(myMode){
-				case MASTER:
-					self->turn = 1;
-					break;
-				case SLAVE:
-					self->turn = 0;
-					break;
-			}
-		}else{
-			switch(myMode){
-				case MASTER:
-					self->turn = 0;
-					break;
-				case SLAVE:
-					self->turn = 1;
-					break;
+		if (note % 2 == 0)
+		{
+			switch (myMode)
+			{
+			case MASTER:
+				self->turn = 1;
+				break;
+			case SLAVE:
+				self->turn = 0;
+				break;
 			}
 		}
-		
+		else
+		{
+			switch (myMode)
+			{
+			case MASTER:
+				self->turn = 0;
+				break;
+			case SLAVE:
+				self->turn = 1;
+				break;
+			}
+		}
+
 		break;
 	case 3:
 		if (note % 3 == myRank)
@@ -539,26 +552,24 @@ void startSound(Controller *self, int arg)
 	// snprintf(strbuff, 100, "Controller play: %d\n", self->play);
 	// SCI_WRITE(&sci0, strbuff);
 	int state = SYNC(&committee, read_state, 0);
-	//ASYNC(&generator,set_turn,1);
+	// ASYNC(&generator,set_turn,1);
 	if (state == MASTER)
 	{
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
-		int ifPlay = SYNC(&generator, judgePlay, self->note);
+		// int ifPlay = SYNC(&generator, judgePlay, self->note);
 	}
-	ASYNC(&generator, judgePlay, self->note);
+	int ifPlay = SYNC(&generator, judgePlay, self->note);
 	if (self->play == 0 || state == F_1 || state == F_2)
 		return;
-	
 
 	int offset = self->key + 5 + 5;
 	int period = periods[myIndex[self->note] + offset] * 1000000;
 	ASYNC(&generator, change_period, period);
 
 	int tempo = beats[self->note];
-	sprintf(strbuff,"note in StartSound is: %d,bpm is : %d Turn is %d\n",self->note,self->bpm);
+	sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
 	SCI_WRITE(&sci0, strbuff);
 	//	if(tempo>=2) SIO_WRITE(&sio0,0);
-
 	float interval = 60.0 / (float)self->bpm;
 	if (self->bpm != arg)
 	{
@@ -578,14 +589,16 @@ void startSound(Controller *self, int arg)
 	ASYNC(&generator, generateTone, 0);
 	SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
 
-	 if (state == MASTER)
-	 {
+	if (state == MASTER)
+	{
 		self->note = (self->note + 1) % 32;
 		// only master repeats calling itself
 		SEND(MSEC(tempo * 500 * interval), MSEC(tempo * 250 * interval), self, startSound, self->bpm);
-	 }else{
-		 return;
-	 }
+	}
+	else
+	{
+		return;
+	}
 }
 
 int getBpm(Controller *self, int unused)
@@ -596,7 +609,6 @@ int getKey(Controller *self, int unused)
 {
 	return self->key;
 }
-
 
 void pause(Sound *self, int arg)
 {
@@ -618,15 +630,15 @@ void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
 	ASYNC(&controller, toggle_led, self->bpm);
-	int state = SYNC(&committee,read_state,0);
-	
-	if(state==MASTER){
+	int state = SYNC(&committee, read_state, 0);
+
+	if (state == MASTER && self->play == 1)
+	{	
+		ASYNC(self, replay, 0);
 		ASYNC(&controller, startSound, self->bpm);
-		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+		// ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
-	if(self->play==1){
-		ASYNC(self,replay,0);
-	}
+
 }
 
 void change_key(Controller *self, int num)
@@ -727,7 +739,7 @@ void send_note_msg(App *self, int noteId)
 	// sprintf(str_num, "%d", noteId);
 	// if(noteId < 10){
 	// 	// msg.buff[0] = 0; // first digit is 0
-	// 	msg.buff[0] = str_num[0]; // second digit is the num 
+	// 	msg.buff[0] = str_num[0]; // second digit is the num
 	// }else{
 	// 	msg.buff[0] = str_num[0];
 	// 	msg.buff[1] = str_num[1];
@@ -750,12 +762,15 @@ void print_tempo(Controller *self, int num)
 	SCI_WRITE(&sci0, strbuff);
 	AFTER(SEC(10), self, print_tempo, 0);
 }
-void replay(Controller* self, int unused){
-    self->note = 0;
+void replay(Controller *self, int unused)
+{
+	self->note = 0;
 }
-void passive_backup(Controller *self, int unused){
-	self->note --;
-	if(self->note==-1) self->note = 31;
+void passive_backup(Controller *self, int unused)
+{
+	self->note--;
+	if (self->note == -1)
+		self->note = 31;
 }
 void reader(App *self, int c)
 {
@@ -773,9 +788,9 @@ void reader(App *self, int c)
 	switch (c)
 	{
 	case 'o':
-		//ASYNC(&committee, compete, 0);
+		// ASYNC(&committee, compete, 0);
 		ASYNC(&committee, IorS_to_M, 0);
-		ASYNC(self, send_DeclareLeader_msg, 0);
+		// ASYNC(self, send_DeclareLeader_msg, 0);
 		break;
 	case 'k':
 
@@ -833,7 +848,7 @@ void reader(App *self, int c)
 		//	if (isLeader)
 		//	{
 		//??Only slave can mute itself??
-		if(state==SLAVE)
+		if (state == SLAVE)
 			ASYNC(&generator, mute, 0);
 		//	}
 		// msg.msgId = 3;
@@ -936,7 +951,7 @@ void reader(App *self, int c)
 		// 	break;
 		// Function: Compulsory leadership change
 	case 'd':
-		ASYNC(&controller, replay,0);
+		ASYNC(&controller, replay, 0);
 		break;
 	}
 	if ((c >= '0' && c <= '9') || (self->count == 0 && c == '-'))
