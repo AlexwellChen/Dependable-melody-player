@@ -21,6 +21,7 @@ typedef struct
 	int leaderRank; // init with -1
 	int mode;		// init with INIT
 	int isLeader;
+	int watchdogCnt;
 } Committee;
 
 void committee_recv(Committee *, int);
