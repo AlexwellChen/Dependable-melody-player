@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 1, -1, INIT, 1};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -49,7 +49,7 @@ void committee_recv(Committee *self, int addr)
             if (self->watchdogCnt == 0)
             {
                 self->watchdogCnt++;
-                ASYNC(&watchdog, monitor, 0);
+                ASYNC(&watchdog, check, 0);
                 SCI_WRITE(&sci0, "Watchdog start!\n");
             }
         }
@@ -249,10 +249,13 @@ void IorS_to_M(Committee *self, int arg)
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
     ASYNC(&controller, startSound, SYNC(&controller, getBpm, 0));
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
+    
+    ASYNC(&watchdog, monitor, 0);
     if (self->watchdogCnt == 0)
     {
         self->watchdogCnt++;
-        ASYNC(&watchdog, monitor, 0);
+        ASYNC(&watchdog, check, 0);
+        
         SCI_WRITE(&sci0, "Watchdog start!\n");
     }
 }

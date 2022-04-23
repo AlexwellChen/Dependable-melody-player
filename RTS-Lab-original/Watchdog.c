@@ -34,6 +34,7 @@ void watchdog_recv(Watchdog *self, int addr)
         //     self->networkState[msg.nodeId] = MASTER;
         // }
         self->networkState[msg.nodeId] = MASTER;
+        ASYNC(self, monitor,0);
         break;
     case 63:
         // update the state array (in a given time interval)
@@ -145,17 +146,6 @@ void check(Watchdog *self, int unused)
         ASYNC(&committee, compete, 0);
     }
 
-#if __CAN_LOOPBACK == 1
-
-#else
-    if (cntDeactive == 2)
-    {
-        // MDD or SDD means current board is out, which indicates ourself enter F3.
-        if (myMode != MASTER)
-            ASYNC(&committee, D_to_F3, 0); // go into F3 mode;
-    }
-#endif
-
     if (myMode == F_3 && boardNum > 0)
     {
         // recover, change from F_3 to slave
@@ -172,23 +162,20 @@ void check(Watchdog *self, int unused)
      */
     if (masterNum == 0)
     { // There is no Master in current network
-        ASYNC(&committee, compete, 0);
+        //ASYNC(&committee, compete, 0);
         // Is it possible get a FFF here?
     }
 
-    // if (self->monitor_flag)
-    // {
-    //     ASYNC(self, monitor, 0);
-    // }
-    ASYNC(self, monitor, 0);
+    AFTER(MSEC(SNOOP_INTERVAL),self, check, 0);
+     for (int i = 0; i < 3; i++)
+    {
+        self->networkState[i] = DEACTIVE;
+    }
 }
 void monitor(Watchdog *self, int unused)
 {
     CANMsg msg;
-    for (int i = 0; i < 3; i++)
-    {
-        self->networkState[i] = DEACTIVE;
-    }
+   
     int myRank = SYNC(&committee, getMyRank, 0);
     int myMode = SYNC(&committee, read_state, 0);
     self->networkState[myRank] = myMode;
@@ -217,7 +204,8 @@ void monitor(Watchdog *self, int unused)
     Time now = T_SAMPLE(&self->timer);
     self->send_time = now;
 
-    AFTER(MSEC(SNOOP_INTERVAL), self, check, 0);
+    if(myMode==MASTER)
+        AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
     // AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
 }
 
