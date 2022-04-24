@@ -271,6 +271,7 @@ void change_StateAfterCompete(Committee *self, int arg)
         // {
         //     SCI_WRITE(&sci0, "Claimed Leadership!\n");
         // }
+        SCI_WRITE(&sci0, "I am the new leader!\n");
         ASYNC(self, IorS_to_M, 0);
     }
     else
@@ -319,15 +320,22 @@ void changeLeaderRank(Committee *self, int rank)
 void checkLeaderExist(Committee *self, int unused)
 {
     // No leader in the system after recovery from F
-    if (self->boardNum == 1)
+    if (!SYNC(&watchdog, isMasterExist, 0))
     {
-        ASYNC(self, compete, 0);
+        SCI_WRITE(&sci0, "No master in network!\n");
+        SYNC(self, compete, 0);
+        SYNC(&controller, replay, 0);
+        //BUG: repeat hear note 0.
+        // ASYNC(&controller, startSound, 0);
     }
-    AFTER(MSEC(105), &controller, startSound, 0);
+    // leader exist, do nothing.
+    
 }
 void exit_Failuremode(Committee *self, int arg)
 {
+    SCI_WRITE(&sci0, "Leave Silent Failure\n");
     self->mode = SLAVE;
+    self->boardNum++;
     // self->leaderRank = -1;
     ASYNC(&watchdog, send_Recovery_msg, 0);
     ASYNC(&app, compulsory_mute, 1);
@@ -336,6 +344,10 @@ void exit_Failuremode(Committee *self, int arg)
 void enter_Failure(Committee *self, int arg)
 {
     char strbuff[100];
+    SCI_WRITE(&sci0, "Silent Failure\n");
+    if(self->mode == MASTER){
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+    }
     if (arg == 1)
     {
         self->mode = F_1;
@@ -407,16 +419,25 @@ void committeeDebugOutput(Committee *self, int arg)
 
 void D_to_F1(Committee *self, int arg)
 {
+    if(self->mode == MASTER){
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+    }
     self->mode = F_1;
 }
 
 void D_to_F2(Committee *self, int arg)
 {
+    if(self->mode == MASTER){
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+    }
     self->mode = F_2;
 }
 
 void D_to_F3(Committee *self, int arg)
 {
+    if(self->mode == MASTER){
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+    }
     self->mode = F_3;
 }
 

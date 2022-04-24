@@ -14,6 +14,8 @@ typedef struct
     Timer timer;
     Time send_time;
     int monitor_flag;
+    int slaveNum;
+    int masterNum;
 } Watchdog;
 
 void watchdog_recv(Watchdog *, int );

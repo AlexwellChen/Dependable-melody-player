@@ -569,9 +569,12 @@ void startSound(Controller *self, int arg)
 	ASYNC(&generator, change_period, period);
 
 	int tempo = beats[self->note];
-	sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
-	SCI_WRITE(&sci0, strbuff);
-	//	if(tempo>=2) SIO_WRITE(&sio0,0);
+
+	// Debug output
+	// sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
+	// SCI_WRITE(&sci0, strbuff);
+
+
 	float interval = 60.0 / (float)self->bpm;
 	if (self->bpm != arg)
 	{
@@ -861,8 +864,9 @@ void reader(App *self, int c)
 	case 'p':
 		if (state == MASTER)
 		{
-			SYNC(&generator, pause, 0);
-			SYNC(&controller, pause_c, 0);
+			// SYNC(&generator, pause, 0);
+			// SYNC(&controller, pause_c, 0);
+			ASYNC(&controller, replay, 0);
 		}
 
 		msg.msgId = 4;
@@ -943,19 +947,20 @@ void reader(App *self, int c)
 	case 'v':
 		ASYNC(&committee, exit_Failuremode, 0);
 		break;
-		// case 'M':
-		// 	// Start or stop monitor
-		// 	if(self->monitorFlag == 1){
-		// 		self->monitorFlag = 0;
-		// 	}else{
-		// 		self->monitorFlag = 1;
-		// 	}
-		// 	break;
+		
 		// Function: Compulsory leadership change
 	case 'd':
 		ASYNC(&controller, replay, 0);
 		break;
+	case 'M':
+		ASYNC(&watchdog, watchdogDebugOutput, 0);
+		break;
+	case 'S':
+		ASYNC(&committee, F1_to_S, 0);
+		SCI_WRITE(&sci0, "Force to Slave\n");
+		break;
 	}
+		
 	if ((c >= '0' && c <= '9') || (self->count == 0 && c == '-'))
 	{
 		self->c[self->count++] = c;

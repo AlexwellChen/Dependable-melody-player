@@ -11,14 +11,16 @@ extern SysIO sio0;
 extern Can can0;
 extern Committee committee;
 
-Watchdog watchdog = {initObject(), {-2, -2, -2}, initTimer(), 0, 1};
+Watchdog watchdog = {initObject(), {-2, -2, -2}, initTimer(), 0, 1, 0, 0};
 
 void watchdog_recv(Watchdog *self, int addr)
 {
     CANMsg msg = *(CANMsg *)addr;
     char strbuff[100];
     snprintf(strbuff, 100, "Watchdog MSGID: %d\n", msg.msgId);
-    SCI_WRITE(&sci0, strbuff);
+    if(msg.msgId != 119){
+        SCI_WRITE(&sci0, strbuff);
+    }
     int mode = SYNC(&committee, read_state, 0);
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int myRank = SYNC(&committee, getMyRank, 0);
@@ -114,6 +116,7 @@ void check(Watchdog *self, int unused)
     int leaderRank = SYNC(&committee, getLeaderRank, 0);
     int cntDeactive = 0;
     int boardNum = 0;
+    int slaveNum = 0;
     int masterNum = 0;
     int myMode = SYNC(&committee, read_state, 0);
     int previous_Bnum = SYNC(&committee, getBoardNum, 0);
@@ -135,14 +138,18 @@ void check(Watchdog *self, int unused)
         if (self->networkState[i] == SLAVE)
         {
             boardNum++;
+            slaveNum++;
         }
         self->networkStateforCheck[i] = self->networkState[i];
     }
+    self->masterNum = masterNum;
+    self->slaveNum = slaveNum;
    
     if (boardNum < previous_Bnum)
     {
         ASYNC(&controller, passive_backup, 0);
     }
+
     ASYNC(&committee, setBoardNum, boardNum);
 
     if (masterNum > 1)
@@ -288,6 +295,8 @@ void send_Recovery_ack(Watchdog *self, int unused)
 void watchdogDebugOutput(Watchdog *self, int arg)
 {
     char strbuff[100];
+    snprintf(strbuff, 100, "\nWatchdog Debug Output", i);
+    SCI_WRITE(&sci0, strbuff);
     for (int i = 0; i < 3; i++)
     {
         snprintf(strbuff, 100, "board %d mode: ", i);
@@ -329,4 +338,6 @@ void watchdogDebugOutput(Watchdog *self, int arg)
             break;
         }
     }
+    snprintf(strbuff, 100, "Master num: %d\nSlave num: %d", self->masterNum, self->slaveNum);
+    SCI_WRITE(&sci0, strbuff);
 }
