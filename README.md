@@ -157,7 +157,9 @@ After dealing with the multiple Master case again, we need to focus on how to re
 
 As mentioned earlier, when we are in F_3 failure and have access to the network at this time, it will be detected by other boards in the next watchdog monitor and the networkState of the current board will be changed. When the networkState changes, it will also change the boardNum, so we use the boardNum as a flag to determine the exit from F_3 failure. When our detected boardNum is greater than 0, we will exit from F_3 and enter Slave.
 
-Finally we have to determine if there is a Master in the network and if MasterNum == 0, then we trigger the compete.
+We have to determine if there is a Master in the network and if MasterNum == 0, then we trigger the compete.
+
+Finally, reset the networkState to Deactive, and set ourself with my state.
 
 ### Passive backup for failure
 For failures to occur, we need to use passive backup to ensure that every note will be played. After the Master detects or receives a failure occurrence, it will replay the current note with noteId-1 in Melody, i.e. the next note.
