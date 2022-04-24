@@ -295,7 +295,7 @@ void send_Recovery_ack(Watchdog *self, int unused)
 void watchdogDebugOutput(Watchdog *self, int arg)
 {
     char strbuff[100];
-    snprintf(strbuff, 100, "\nWatchdog Debug Output", i);
+    snprintf(strbuff, 100, "\nWatchdog Debug Output");
     SCI_WRITE(&sci0, strbuff);
     for (int i = 0; i < 3; i++)
     {
