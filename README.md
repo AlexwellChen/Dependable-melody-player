@@ -5,23 +5,23 @@ This music player is based on the implementation of the EDA223 project, the main
 
 ## The protocol
 
-| msgId | msg.nodeId | msg.buff            | Usage                                | State           | Class   |
-| ----- | ---------- | ------------------- | ------------------------------------ | --------------- | ------- |
-| 1     | myRank     | NaN                 | Increase the volum                   | Master          | Melody  |
-| 2     | myRank     | NaN                 | Decrease the volum                   | Master          | Melody  |
-| 3     | myRank     | NaN                 | Mute the melody                      | Master          | Melody  |
-| 4     | myRank     | NaN                 | Pause the melody                     | Master          | Melody  |
-| 5     | myRank     | New value, size = 1 | Change the positive key              | Master          | Melody  |
-| 6     | myRank     | New value, size = 1 | Change the negative key              | Master          | Melody  |
-| 7     | myRank     | New value, size = 3 | Change the bpm                       | Master          | Melody  |
-| 8     | myRank     | NaN                 | Reset the key and tempo              | Master          | Melody  |
-| 119   | myRank     | Note ID             | Boardcast current note               | Master          | Network |
-| 122   | myRank     | NaN                 | Detect member in the network         | Init            | Network |
-| 123   | myRank     | NaN                 | Declare Leadership                   | Waiting->Master | Network |
-| 124   | myRank     | Rank from msgId 127 | Response to leader claim             | Init            | Network |
-| 125   | myRank     | NaN                 | Reset the bpm and key                | Master          | Network |
-| 126   | myRank     | boardNum            | Send board number in current network | Init            | Network |
-| 127   | myRank     | NaN                 | Claim for leadership                 | Init->Waiting   | Network |
+| msgId   | msg.nodeId | msg.buff                | Usage                                | State           | Class       |
+| ------- | ---------- | ----------------------- | ------------------------------------ | --------------- | ----------- |
+| 1       | myRank     | NaN                     | Increase the volum                   | Master          | Melody      |
+| 2       | myRank     | NaN                     | Decrease the volum                   | Master          | Melody      |
+| 3       | myRank     | NaN                     | Mute the melody                      | Master          | Melody      |
+| 4       | myRank     | NaN                     | Pause the melody                     | Master          | Melody      |
+| 5       | myRank     | New value, size = 1     | Change the positive key              | Master          | Melody      |
+| 6       | myRank     | New value, size = 1     | Change the negative key              | Master          | Melody      |
+| 7       | myRank     | New value, size = 3     | Change the bpm                       | Master          | Melody      |
+| 8       | myRank     | NaN                     | Reset the key and tempo              | Master          | Melody      |
+| 119     | myRank     | Note ID                 | Boardcast current note               | Master          | Network     |
+| 122     | myRank     | NaN                     | Detect member in the network         | Init            | Network     |
+| 123     | myRank     | NaN                     | Declare Leadership                   | Waiting->Master | Network     |
+| ~~124~~ | ~~myRank~~ | ~~Rank from msgId 127~~ | ~~Response to leader claim~~         | ~~Init~~        | ~~Network~~ |
+| 125     | myRank     | NaN                     | Reset the bpm and key                | Master          | Network     |
+| 126     | myRank     | boardNum                | Send board number in current network | Init            | Network     |
+| 127     | myRank     | NaN                     | Claim for leadership                 | Init->Waiting   | Network     |
 
 ## Establish the network
 The network is built based on the following processes.
@@ -55,17 +55,23 @@ In this step we start initializing the state machine.
 
 First all boards should have an initial state of **Init**, which means a new member of the network (or a Master waiting to hand over leadership).
 
-Then use the button 'o' to compete for leadership, which of course needs to be assigned manually here. After we press 'o' the board will enter the **Waiting** state, use AFTER(MSEC(50), checkWaiting) to check if there are other boards in the **Waiting** state. If there are other boards in the **Waiting** state, then a compete is triggered and we specify that the nodeId with the greater wins the race.
-
-Since there are and only two boards that may compete in this system, the current state machine cannot handle competition situations with more than two boards.
-
-If a board in the **Waiting** state fails to compete, then it returns to the **Init** state and conversely broadcasts msgId 123 declaring its leadership (no other competitor can exist) and then go into **Master** state.
+Then the one who wants to be the Master press 'o' enter competition, after total 10ms it will become Master.
 
 All boards in the Init state will enter the **Slave** state after receiving msgId 123.
 
 At this point this network is ready.
 
-Boards in the Slave state can also compete for leadership by pressing 'o'. When the board in **Waiting** state sends msgId 127, the **Master** will enter **Init** state after receiving msgId 127, and will enter **Slave** state after receiving msgId 123.
+Boards in the Slave state can also compete for leadership by pressing 'o'. The **Master** will enter **Slave** state after receiving msgId 123.
+
+### Compete
+
+Then use the button 'o' to compete for leadership, which of course needs to be assigned manually here. After we press 'o' the board will enter the **Waiting** state, use AFTER(MSEC(5), checkWaiting) to check if there are other boards in the **Waiting** state. If there are other boards in the **Waiting** state, then a compete is triggered and we specify that the nodeId with the greater Rank wins the race. The first 5ms here is to waiting another competitor join the race, after 5ms we treat this competitor is not in current race.
+
+![Compete](Graph/compete.jpg)
+
+Since there are and only two boards that may compete in this system, the current state machine cannot handle competition situations with more than two boards.
+
+If a board in the **Waiting** state fails to compete, then it returns to the **Slave** state and conversely broadcasts msgId 123 declaring its leadership (no other competitor can exist) and then go into **Master** state.
 
 ## Melody playing
 
@@ -74,7 +80,7 @@ After finishing the network leadership setup, we are going to start playing musi
 
 There are different judgment conditions for different boardNum.
 
-boardNum == 3: noteId % boardNum == myRank, the current board plays this note.
+boardNum == 3: noteId % 3 == myRank, the current board plays this note.
 
 boardNum == 2: noteId % 2 == 0 Master play, noteId % 2 == 1 Slave play. (Current network can only exist one Master and one Slave)
 
@@ -96,24 +102,30 @@ For the Slave, every msgId 119 received will trigger the CAN message handler and
 
 *Failure Mode F3*: The CAN connection wire is disconnected and resumed when the connection wire is plugged back in. No CAN message can be send.
 
-### The Watchdog
+### The Watchdog (Test passed on 2 boards)
 A watchdog is an object used to monitor the status of boards in a network. The basic operation logic of the watchdog is shown in the figure.
 
-![Watchdog](Graph/watchdog.jpg)
+![Watchdog](Graph/new_watchdog.jpg)
 
-### Monitor
+### Monitor 
 
 Monitor is a function that maintains the networkState array, which stores the current state of all boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
 
 ![NetworkState](Graph/networkState.jpg)
 
-The Monitor first sets all boards to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.
+~~The Monitor first sets all boards to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.~~
 
-Finally we use the AFTER function to call the check function after [SNOOP_INTERVAL] to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).
+~~Finally we use the AFTER function to call the check function after [SNOOP_INTERVAL] to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).~~
 
-![NetworkState change in normal case](Graph/networkState_change_in_normal.jpg)
+The monitor first set **networkState[myRank] = myMode**, then sends the corresponding CAN message according to its status, finally only the Master's Monitor runs with a [SNOOP_INTERVAL] cycle. *For Slave, their monitor will **start** after receiving msgId 64 from the Master*, which means that all Slave no longer start the monitor function autonomously. Once the current state of the board changes from Master to another state, then Monitor's period execution will stop.
 
-As we had wipe all the states which is stored in networkState at the begining of Monitor, we need to track all boards in every watch snoop. As we can know from the assignment, F1 and F2 mode could still handle the CAN message, which means it still send and response watchdog message. Therefore, in different states, watchdog will send different msgId, as shown in the following table.
+**Change Log**: During the test, we found that the original check start monitor may not be synchronized with the watchdog of Master and Slave in the reality. Due to the lack of information about the Master, the Slave starts to compete to become the Master at a certain point in time, resulting in the existence of two Masters in the network.
+
+
+
+![NetworkState change in normal case](Graph/new_networkState_change_in_normal.jpg)
+
+As we had wipe all the states which is stored in networkState at the end of Check, we need to track all boards in every watch snoop. As we can know from the assignment, F1 and F2 mode could still handle the CAN message, which means it still send and response watchdog message. Therefore, in different states, watchdog will send different msgId, as shown in the following table.
 
 | msgId | msg.nodeId | msg.buff | Usage                                       | State     | Class    |
 | ----- | ---------- | -------- | ------------------------------------------- | --------- | -------- |
@@ -133,9 +145,7 @@ F_1/F_2 will also sends msgId 61 and msgId 62 through the monitor, which ensures
 The difference between F_1 and F_2 is only between manual recovery and automatic recovery, the recovery process they perform is exactly the same. Please refer to the New member join section for the specific recovery process.
 
 ### Check
-In the check function, We will first initialize a new boardNum = 0.
-
-Then we iterate through the networkState array, counting the number of DEACTIVE, Master and Slave in the network.
+We start iterate through the networkState array first, counting the number of DEACTIVE, Master and Slave in the network.
 
 The number of DEACTIVE may indicates the CAN cable of current board is pluged out or not. When we detect 2 DEACTIVE, means we don't get response from other boards, the CAN cable may be lost in this case, thus we should enter failure F_3. (Not in loopback mode. The F_3 failure in loopback mode is different from none-loopback mode.)
 
@@ -162,16 +172,16 @@ You are free to choose the implementation here.
 
 **Related CAN messages**
 
-| msgId | msg.nodeId | msg.buff | Usage                | State          | Class    |
-| ----- | ---------- | -------- | -------------------- | -------------- | -------- |
-| 59    | myRank     | boardNum | Failure recovery_ack | Master         | Watchdog |
-| 60    | myRank     | NaN      | Failure recovery     | Failure->Slave | Watchdog |
+| msgId | msg.nodeId | msg.buff | Usage                | State                | Class    |
+| ----- | ---------- | -------- | -------------------- | -------------------- | -------- |
+| 59    | myRank     | boardNum | Failure recovery_ack | Master               | Watchdog |
+| 60    | myRank     | NaN      | Failure recovery     | Failure F1/F2->Slave | Watchdog |
 
 **Recovery from F_1 and F_2**
 
 This part mainly focus on failure recovery. When a board is recovery from F_1/F_2, it should send msgId 60. If current network has a Master, it should send msgId 59 to ack and the msg.buff should contain the boardNum in current network.
 
-*Case 1*
+*Case 1 (with Master)*
 
 | State   | Action                                               | networkState            |
 | ------- | ---------------------------------------------------- | ----------------------- |
@@ -183,18 +193,16 @@ This part mainly focus on failure recovery. When a board is recovery from F_1/F_
 
 If the current board is the first board in the network, then it will not receive an ACK from the Master (msgId 59). We stipulate: after sending msgId 60, use AFTER(MSEC(100)) to call a function that checks for the presence of a Master. If no Master exists, we use the COMPETE function to obtain leadership. 
 
-*Case 2*
+*Case 2  (without Master)*
 
 | State   | Action                                             | networkState                                |
 | ------- | -------------------------------------------------- | ------------------------------------------- |
 | F_1/F_2 | Enter recovery, Send msgId 60/ Recv msgId 61 or 62 | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
 | Slave   | Check master existence.                            | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
-| Waiting | Compete for Master.                                | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
-| Master  | Get leadership.                                    | \| F_1/F_2 \| F_1/F_2/F_3 \| F_1/F_2/F_3 \| |
+| Slave   | Change to Master.                                  | \| M \| F_1/F_2/F_3 \| F_1/F_2/F_3 \|       |
+| Master  | Get leadership.                                    | \| M\| F_1/F_2/F_3 \| F_1/F_2/F_3 \|        |
 | Master  | Next monitor, change netWorkState.                 | \| M \| D \| D \|                           |
 | Master  | Next check, change netWorkState.                   | \| M \| F_1/F_2/F_3 \| F_1/F_2/F_3 \|       |
-
-
 
 *Note*: Start playing music after we have obtained leadership, otherwise an error will occur.
 
@@ -204,7 +212,7 @@ The main evidence for determining to exit F_3 is that the current board is in th
 
 F_3 join to the network have two senarios.
 
-*Case 1*
+*Case 1  (with Master)*
 
 | State | Action                             | networkState        |
 | ----- | ---------------------------------- | ------------------- |
@@ -212,21 +220,19 @@ F_3 join to the network have two senarios.
 | F_3   | Count boardNum = 2                 | \| F_3 \| S \| M \| |
 | Slave | Exit F_3, enter Slave              | \| S \| S \| M \|   |
 
-*Case 2*
+*Case 2  (without Master)*
 
-| State | Action                             | networkState            |
-| ----- | ---------------------------------- | ----------------------- |
-| F_3   | Send msgId 63/ Recv msgId 61 or 62 | \| F_3 \| F_2 \| F_1 \| |
-| F_3   | Set networkState[myRank] = Slave   | \| S \| F_2 \| F_1 \|   |
-| F_3   | Count boardNum = 1                 | \| S \| F_2 \| F_1 \|   |
-| Slave | Exit F_3, enter Slave              | \| S \| F_2 \| F_1 \|   |
+| State  | Action                             | networkState            |
+| ------ | ---------------------------------- | ----------------------- |
+| F_3    | Send msgId 63/ Recv msgId 61 or 62 | \| F_3 \| F_2 \| F_1 \| |
+| F_3    | Set networkState[myRank] = Slave   | \| S \| F_2 \| F_1 \|   |
+| F_3    | Count boardNum = 1                 | \| S \| F_2 \| F_1 \|   |
+| Slave  | Exit F_3, enter Slave              | \| S \| F_2 \| F_1 \|   |
+| Slave  | Check master existence.            | \|S \|F_2 \|F_1 \|      |
+| Slave  | Change to Master.                  | \|M \|F_2 \|F_1 \|      |
+| Master | Get leadership, play music.        | \|M \|F_2 \|F_1 \|      |
 
+**Join from Init**
 
+Since this scenario are not required by the Lab-PM, we do not have handler for it.
 
-## Todo List
-1. ~~Modify debug output information.~~ Done
-2. Discussing the failure of F_3 in the loopback mode.
-3. ~~Implementing Passive Backup for Notes.~~
-4. ~~F_3 exit in |F_3|F_2|F_1| case.~~ Done, need test
-5. If recovery from failure, boardNum == 1, we need to play from the first note.
-6. note send

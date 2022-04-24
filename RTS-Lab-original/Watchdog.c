@@ -169,9 +169,7 @@ void check(Watchdog *self, int unused)
         if(boardNum == 1 && myMode == SLAVE){
             // ASYNC(&committee, D_to_F3, 0);
         }else if(myMode != F_1 && myMode != F_2 && myMode != F_3){
-            snprintf(strbuff, 100, "board mode: %d\n", myMode);
-            SCI_WRITE(&sci0, strbuff);
-            ASYNC(&committee, IorS_to_M, 0);
+            ASYNC(&committee, compete, 0);
         }
         // Is it possible get a FFF here?
     }

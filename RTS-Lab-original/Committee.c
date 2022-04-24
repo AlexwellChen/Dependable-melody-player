@@ -222,7 +222,7 @@ void send_GetLeadership_msg(Committee *self, int arg)
     msg.nodeId = self->myRank;
     msg.msgId = 127;
     CAN_SEND(&can0, &msg);
-    self->mode = WAITING;
+    
 }
 
 // NOT USED ANYMORE
@@ -263,14 +263,15 @@ void change_StateAfterCompete(Committee *self, int arg)
 {
     if (self->isLeader)
     {
-        self->mode = MASTER;
-        self->leaderRank = self->myRank;
-        // ASYNC(&watchdog, monitor, self->myRank);
-        ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
-        if (self->leaderRank == self->myRank && self->mode == MASTER)
-        {
-            SCI_WRITE(&sci0, "Claimed Leadership!\n");
-        }
+        // self->mode = MASTER;
+        // self->leaderRank = self->myRank;
+        // // ASYNC(&watchdog, monitor, self->myRank);
+        // ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
+        // if (self->leaderRank == self->myRank && self->mode == MASTER)
+        // {
+        //     SCI_WRITE(&sci0, "Claimed Leadership!\n");
+        // }
+        ASYNC(self, IorS_to_M, 0);
     }
     else
     {
