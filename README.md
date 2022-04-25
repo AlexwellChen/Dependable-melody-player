@@ -242,7 +242,7 @@ The time of the last received message is stored in the Regulator. After we recei
 
 At the end of the above operation, we will set the previoustime to the current time, and then determine if there is a messgae in the queue and if there is a handleQueue running. If there are unprocessed messages in the queue and the current dequeueFlag == 0, we use AFTER to call a handleQueue function after the *MSEC(DELTA-diff)* time to process the messages in the queue.
 
-![time graph](/Users/alexwell/Desktop/EDA423/Lab/Graph/regulator_timegraph.jpg)
+![time graph](Graph/regulator_timegraph.jpg)
 
 
 
@@ -250,7 +250,7 @@ At the end of the above operation, we will set the previoustime to the current t
 
 The Regulator is designed based on a circular queue. When a message is added to the queue, then head++ and count++, and vice versa when a message is processed, tail++ and count-. When the head reaches the last element of the array, the next head will point to the first element of the number, completing the access of the circular queue by mod operation. When count>20, the user is notified that the Buffer is full.
 
-![buffer](/Users/alexwell/Desktop/EDA423/Lab/Graph/buffer.jpg)
+![buffer](Graph/buffer.jpg)
 
 The memory size of this buffer queue:
 $$
