@@ -180,13 +180,15 @@ void check(Watchdog *self, int unused)
         }
         // Is it possible get a FFF here?
     }
-    // SYNC(&watchdog, watchdogDebugOutput,0);
     AFTER(MSEC(SNOOP_INTERVAL),self, check, 0);
     for (int i = 0; i < 3; i++)
     {
         self->networkState[i] = DEACTIVE;
     }
     self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
+    if(myMode == F_1 || myMode == F_2){
+        ASYNC(self, monitor, 0);
+    }
 }
 void monitor(Watchdog *self, int unused)
 {
