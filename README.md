@@ -113,10 +113,6 @@ Monitor is a function that maintains the networkState array, which stores the cu
 
 ![NetworkState](Graph/networkState.jpg)
 
-~~The Monitor first sets all boards to Deactive (i.e. assuming none of them are alive) and sets networkState[myRank] to committee->mode (i.e. our own state). Then send msgId 63, since all boards in the network have the same behavior, we will also receive msgId 63 from other boards (if they are alive), and then we modify the corresponding networkState[msg.nodeId] in the CAN handler of the watchdog.~~
-
-~~Finally we use the AFTER function to call the check function after [SNOOP_INTERVAL] to check if there is a Deactive board in the current network and set it to F_3 (F_1/F_2 are both active entries).~~
-
 The monitor first set **networkState[myRank] = myMode**, then sends the corresponding CAN message according to its status, finally only the Master's Monitor runs with a [SNOOP_INTERVAL] cycle. *For Slave, their monitor will **start** after receiving msgId 64 from the Master*, which means that all Slave no longer start the monitor function autonomously. Once the current state of the board changes from Master to another state, then Monitor's period execution will stop.
 
 **Change Log**: During the test, we found that the original check start monitor may not be synchronized with the watchdog of Master and Slave in the reality. Due to the lack of information about the Master, the Slave starts to compete to become the Master at a certain point in time, resulting in the existence of two Masters in the network.
@@ -238,3 +234,33 @@ F_3 join to the network have two senarios.
 
 Since this scenario are not required by the Lab-PM, we do not have handler for it.
 
+### The regulator 
+
+**Buffer or not**
+
+The time of the last received message is stored in the Regulator. After we receive a CAN message the receiver function is triggered and the appendQueue function is called. At the beginning of the appendQueue function we sample the current time and compare it with the previousTime, when the differenceenc is greater than DELTA we add the message to the queue, otherwise the appendQueue will process the message directly.
+
+At the end of the above operation, we will set the previoustime to the current time, and then determine if there is a messgae in the queue and if there is a handleQueue running. If there are unprocessed messages in the queue and the current dequeueFlag == 0, we use AFTER to call a handleQueue function after the *MSEC(DELTA-diff)* time to process the messages in the queue.
+
+![time graph](/Users/alexwell/Desktop/EDA423/Lab/Graph/regulator_timegraph.jpg)
+
+
+
+**How to buffer**
+
+The Regulator is designed based on a circular queue. When a message is added to the queue, then head++ and count++, and vice versa when a message is processed, tail++ and count-. When the head reaches the last element of the array, the next head will point to the first element of the number, completing the access of the circular queue by mod operation. When count>20, the user is notified that the Buffer is full.
+
+![buffer](/Users/alexwell/Desktop/EDA423/Lab/Graph/buffer.jpg)
+
+The memory size of this buffer queue:
+$$
+B_{burst} \times sizeof(int) = 4B_{burst}
+$$
+The time complexity of operations:
+$$
+Inqueue = O(1)\\
+Dequeue = O(1)
+$$
+
+
+**Minimum DELTA**
