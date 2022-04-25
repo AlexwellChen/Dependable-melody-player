@@ -300,7 +300,7 @@ void send_Recovery_ack(Watchdog *self, int unused)
 void watchdogDebugOutput(Watchdog *self, int arg)
 {
     char strbuff[100];
-    snprintf(strbuff, 100, "\nWatchdog Debug Output");
+    snprintf(strbuff, 100, "\nWatchdog Debug Output\n");
     SCI_WRITE(&sci0, strbuff);
     for (int i = 0; i < 3; i++)
     {
@@ -343,6 +343,6 @@ void watchdogDebugOutput(Watchdog *self, int arg)
             break;
         }
     }
-    snprintf(strbuff, 100, "Master num: %d\nSlave num: %d", self->masterNum, self->slaveNum);
+    snprintf(strbuff, 100, "Master num: %d\nSlave num: %d\n", self->masterNum, self->slaveNum);
     SCI_WRITE(&sci0, strbuff);
 }

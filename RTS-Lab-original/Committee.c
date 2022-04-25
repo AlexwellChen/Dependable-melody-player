@@ -351,7 +351,7 @@ void enter_Failure(Committee *self, int arg)
     if (arg == 1)
     {
         self->mode = F_1;
-        ASYNC(&watchdog, send_F1_msg, 0);
+        // ASYNC(&watchdog, send_F1_msg, 0);
         ASYNC(&app, compulsory_mute, 0);
         self->boardNum = 1;
     }
@@ -359,7 +359,7 @@ void enter_Failure(Committee *self, int arg)
     {
         self->mode = F_2;
         self->boardNum = 0;
-        ASYNC(&watchdog, send_F2_msg, 0);
+        // ASYNC(&watchdog, send_F2_msg, 0);
         ASYNC(&app, compulsory_mute, 0);
         AFTER(SEC(15), self, exit_Failuremode, 0);
     }
