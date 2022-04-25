@@ -238,7 +238,7 @@ Since this scenario are not required by the Lab-PM, we do not have handler for i
 
 **Buffer or not**
 
-The time of the last received message is stored in the Regulator. After we receive a CAN message the receiver function is triggered and the appendQueue function is called. At the beginning of the appendQueue function we sample the current time and compare it with the previousTime, when the difference is greater than DELTA we add the message to the queue, otherwise the appendQueue will process the message directly.
+The time of the last received message is stored in the Regulator. After we receive a CAN message the receiver function is triggered and the appendQueue function is called. At the beginning of the appendQueue function we sample the current time and compare it with the previousTime, when the difference is smaller than DELTA we add the message to the queue, otherwise the appendQueue will process the message directly.
 
 At the end of the above operation, we will set the previoustime to the current time, and then determine if there is a messgae in the queue and if there is a handleQueue running. If there are unprocessed messages in the queue and the current dequeueFlag == 0, we use AFTER to call a handleQueue function after the *MSEC(DELTA-diff)* time to process the messages in the queue.
 
