@@ -139,6 +139,8 @@ void check(Watchdog *self, int unused)
             if (self->networkState[leaderRank] == F_1 || self->networkState[leaderRank] == F_2)
             {
                 ASYNC(&committee, compete, 0);
+            }else{
+                ASYNC(&controller, set_play, 0);
             }
         }
         else if (myMode != F_1 && myMode != F_2 && myMode != F_3)
