@@ -10,7 +10,7 @@ This music player is based on the implementation of the EDA223 project, the main
 | 1       | myRank     | NaN                     | Increase the volum                   | Master          | Melody      |
 | 2       | myRank     | NaN                     | Decrease the volum                   | Master          | Melody      |
 | 3       | myRank     | NaN                     | Mute the melody                      | Master          | Melody      |
-| 4       | myRank     | NaN                     | Pause the melody                     | Master          | Melody      |
+| 4       | myRank     | NaN                     | Stop and replay the melody           | Master          | Melody      |
 | 5       | myRank     | New value, size = 1     | Change the positive key              | Master          | Melody      |
 | 6       | myRank     | New value, size = 1     | Change the negative key              | Master          | Melody      |
 | 7       | myRank     | New value, size = 3     | Change the bpm                       | Master          | Melody      |
