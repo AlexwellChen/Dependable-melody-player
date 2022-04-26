@@ -511,6 +511,15 @@ void toggle_led(Controller *self, int arg)
 		SEND(MSEC(500 * interval), MSEC(250 * interval), self, toggle_led, self->bpm);
 	}
 }
+
+void setLed(Controller *self, int arg)
+{
+	if(self->play){
+		SIO_WRITE(&sio0, 0);
+	}else{
+		SIO_WRITE(&sio0, 1);
+	}
+}
 int judgePlay(Sound *self, int note)
 {
 	int num = SYNC(&committee, getBoardNum, 0);
@@ -669,7 +678,6 @@ void change_key(Controller *self, int num)
 }
 void change_bpm(Controller *self, int num)
 {
-
 	if (num >= 30 && num <= 300)
 	{
 		self->bpm = num;
@@ -695,7 +703,6 @@ void change_bpm(Controller *self, int num)
 
 void send_key_msg(App *self, int num)
 {
-
 	CANMsg msg;
 
 	if (num < 0)

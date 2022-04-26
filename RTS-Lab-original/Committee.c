@@ -52,6 +52,7 @@ void committee_recv(Committee *self, int addr)
                 AFTER(MSEC(SNOOP_INTERVAL), &watchdog, check, 0);
                 SCI_WRITE(&sci0, "Watchdog start!\n");
             }
+            ASYNC(&controller, setLed, 0);
         }
         case 126:
         {
