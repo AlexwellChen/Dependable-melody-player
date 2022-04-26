@@ -102,7 +102,7 @@ const int beats[32] = {2, 2, 2, 2, 2,
 
 App app = {initObject(), 0, 'X', {0}, 0, -1, 0, initTimer(), 0, 0, 0, 0, 0, -1, -1, -1, -1, 0, 1};
 Sound generator = {initObject(), 0, 0, 5, 0, 1, 0, 0, 0};
-Controller controller = {initObject(), 0, 0, 0, 120, 0, 0};
+Controller controller = {initObject(), 1, 0, 0, 120, 0, 0};
 
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app, user_call_back);
@@ -288,7 +288,7 @@ void receiver(App *self, int unused)
 	{ // Mask watchdog CAN message output
 		SCI_WRITE(&sci0, "--------------------receiver-------------------------\n");
 		SCI_WRITE(&sci0, "Can msg received: \n");
-		
+
 		snprintf(strbuff, 100, "ID: %d\n", msg.msgId);
 		SCI_WRITE(&sci0, strbuff);
 	}
@@ -343,10 +343,14 @@ void receiver(App *self, int unused)
 	}
 }
 
-void pause_slave(Controller * self ,int arg){
-	if(self->play ==1){
-		self->play =0;
-	}else{
+void pause_slave(Controller *self, int arg)
+{
+	if (self->play == 1)
+	{
+		self->play = 0;
+	}
+	else
+	{
 		self->play = 1;
 	}
 }
@@ -498,14 +502,14 @@ int getVolume(Sound *self, int arg)
 
 void toggle_led(Controller *self, int arg)
 {
-	if (self->bpm != arg)
+	if (self->bpm != arg || self->play == 0)
 		return;
 	SIO_TOGGLE(&sio0);
 	float interval = 60.0 / (float)self->bpm;
-	if(SYNC(&committee, read_state, 0) == MASTER){
+	if (SYNC(&committee, read_state, 0) == MASTER)
+	{
 		SEND(MSEC(500 * interval), MSEC(250 * interval), self, toggle_led, self->bpm);
 	}
-	
 }
 int judgePlay(Sound *self, int note)
 {
@@ -557,7 +561,8 @@ int judgePlay(Sound *self, int note)
 void startSound(Controller *self, int arg)
 {
 	char strbuff[100];
-	if(self->play==0) return;
+	if (self->play == 0)
+		return;
 	// snprintf(strbuff, 100, "Controller play: %d\n", self->play);
 	// SCI_WRITE(&sci0, strbuff);
 	int state = SYNC(&committee, read_state, 0);
@@ -565,7 +570,7 @@ void startSound(Controller *self, int arg)
 	if (state == MASTER)
 	{
 		ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
-		// int ifPlay = SYNC(&generator, judgePlay, self->note);
+												// int ifPlay = SYNC(&generator, judgePlay, self->note);
 	}
 	int ifPlay = SYNC(&generator, judgePlay, self->note);
 	if (state == F_1 || state == F_2)
@@ -578,9 +583,8 @@ void startSound(Controller *self, int arg)
 	int tempo = beats[self->note];
 
 	// Debug output
-	// sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d\n", self->note, self->bpm, ifPlay);
-	// SCI_WRITE(&sci0, strbuff);
-
+	sprintf(strbuff, "note in StartSound is: %d,bpm is : %d Turn is %d, Play is: %d\n", self->note, self->bpm, ifPlay, self->play);
+	SCI_WRITE(&sci0, strbuff);
 
 	float interval = 60.0 / (float)self->bpm;
 	if (self->bpm != arg)
@@ -641,16 +645,15 @@ void pause(Sound *self, int arg)
 void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
-	// ASYNC(&controller, toggle_led, self->bpm);
+	ASYNC(&controller, toggle_led, self->bpm);
 	int state = SYNC(&committee, read_state, 0);
 
 	if (state == MASTER && self->play == 1)
-	{	
+	{
 		ASYNC(self, replay, 0);
-		
+
 		// ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
-
 }
 
 void change_key(Controller *self, int num)
@@ -774,18 +777,14 @@ void print_tempo(Controller *self, int num)
 	SCI_WRITE(&sci0, strbuff);
 	AFTER(SEC(10), self, print_tempo, 0);
 }
-void set_play(Controller *self,int flag){
+void set_play(Controller *self, int flag)
+{
 	self->play = flag;
 }
 void replay(Controller *self, int unused)
 {
 	self->note = 0;
-	if(self->play ==0){
-		self->play =1;
-		ASYNC(&controller,startSound,0);
-	}else{
-		self->play = 0;
-	}
+	ASYNC(&controller, startSound, 0);
 }
 void passive_backup(Controller *self, int unused)
 {
@@ -880,9 +879,9 @@ void reader(App *self, int c)
 	case 'p':
 		if (state == MASTER)
 		{
-			//SYNC(&generator, pause, 0);
+			// SYNC(&generator, pause, 0);
 			SYNC(&controller, pause_c, 0);
-			//ASYNC(&controller, replay, 0);
+			// ASYNC(&controller, replay, 0);
 		}
 
 		msg.msgId = 4;
@@ -963,7 +962,6 @@ void reader(App *self, int c)
 	case 'v':
 		ASYNC(&committee, exit_Failuremode, 0);
 		break;
-		
 
 		break;
 	case 'M':
@@ -974,7 +972,7 @@ void reader(App *self, int c)
 		SCI_WRITE(&sci0, "Force to Slave\n");
 		break;
 	}
-		
+
 	if ((c >= '0' && c <= '9') || (self->count == 0 && c == '-'))
 	{
 		self->c[self->count++] = c;

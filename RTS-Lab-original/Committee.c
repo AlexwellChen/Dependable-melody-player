@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 0, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -346,7 +346,7 @@ void enter_Failure(Committee *self, int arg)
     char strbuff[100];
     SCI_WRITE(&sci0, "Silent Failure\n");
     if(self->mode == MASTER){
-        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure\n");
     }
     if (arg == 1)
     {
@@ -420,7 +420,7 @@ void committeeDebugOutput(Committee *self, int arg)
 void D_to_F1(Committee *self, int arg)
 {
     if(self->mode == MASTER){
-        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure\n");
     }
     self->mode = F_1;
 }
@@ -428,7 +428,7 @@ void D_to_F1(Committee *self, int arg)
 void D_to_F2(Committee *self, int arg)
 {
     if(self->mode == MASTER){
-        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure\n");
     }
     self->mode = F_2;
 }
@@ -436,7 +436,7 @@ void D_to_F2(Committee *self, int arg)
 void D_to_F3(Committee *self, int arg)
 {
     if(self->mode == MASTER){
-        SCI_WRITE(&sci0, "Leadership Void Due To Failure");
+        SCI_WRITE(&sci0, "Leadership Void Due To Failure\n");
     }
     self->mode = F_3;
 }
