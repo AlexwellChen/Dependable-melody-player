@@ -114,5 +114,7 @@ void print_tempo(Controller *, int);
 void replay (Controller*, int);
 void passive_backup (Controller*, int);
 void toggle_led(Controller *, int);
+void pause_slave(Controller *,int);
+void set_play(Controller *,int);
 
 #endif

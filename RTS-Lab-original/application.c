@@ -316,8 +316,7 @@ void receiver(App *self, int unused)
 			ASYNC(&generator, mute, 0);
 			break;
 		case 4:
-			// SYNC(&generator, pause, 0);
-			// SYNC(&controller, pause_c, 0);
+			SYNC(&controller, pause_slave, 0);
 			break;
 		case 5:
 			// positive key
@@ -344,6 +343,13 @@ void receiver(App *self, int unused)
 	}
 }
 
+void pause_slave(Controller * self ,int arg){
+	if(self->play ==1){
+		self->play =0;
+	}else{
+		self->play = 1;
+	}
+}
 void volume_control(Sound *self, int inc)
 {
 	if (inc == 1 && self->volume < 20)
@@ -433,41 +439,41 @@ void generateTone(Sound *tone, int unused)
 	}
 }
 
-void play(Sound *self, int arg)
-{
+// void play(Sound *self, int arg)
+// {
 
-	self->flag = !self->flag;
-	if (self->gap || !self->turn)
-	{
-		*DAC_port = 0x00;
-	}
-	else
-	{
-		if (self->flag)
-		{
-			*DAC_port = self->volume;
-		}
-		else
-		{
-			*DAC_port = 0x00;
-		}
-	}
-	if (self->play)
-	{
-		if (self->deadline_enabled)
-		{
-			SEND(USEC(self->period), USEC(self->period), self, play, 0);
-		}
-		else
-		{
-			AFTER(USEC(self->period), self, play, 0);
-		}
-	}
-	else
-	{
-		return;
-	}
-}
+// 	self->flag = !self->flag;
+// 	if (self->gap || !self->turn)
+// 	{
+// 		*DAC_port = 0x00;
+// 	}
+// 	else
+// 	{
+// 		if (self->flag)
+// 		{
+// 			*DAC_port = self->volume;
+// 		}
+// 		else
+// 		{
+// 			*DAC_port = 0x00;
+// 		}
+// 	}
+// 	if (self->play)
+// 	{
+// 		if (self->deadline_enabled)
+// 		{
+// 			SEND(USEC(self->period), USEC(self->period), self, play, 0);
+// 		}
+// 		else
+// 		{
+// 			AFTER(USEC(self->period), self, play, 0);
+// 		}
+// 	}
+// 	else
+// 	{
+// 		return;
+// 	}
+// }
 void change_period(Sound *self, int arg)
 {
 	self->period = arg;
@@ -551,6 +557,7 @@ int judgePlay(Sound *self, int note)
 void startSound(Controller *self, int arg)
 {
 	char strbuff[100];
+	if(self->play==0) return;
 	// snprintf(strbuff, 100, "Controller play: %d\n", self->play);
 	// SCI_WRITE(&sci0, strbuff);
 	int state = SYNC(&committee, read_state, 0);
@@ -767,9 +774,18 @@ void print_tempo(Controller *self, int num)
 	SCI_WRITE(&sci0, strbuff);
 	AFTER(SEC(10), self, print_tempo, 0);
 }
+void set_play(Controller *self,int flag){
+	self->play = flag;
+}
 void replay(Controller *self, int unused)
 {
 	self->note = 0;
+	if(self->play ==0){
+		self->play =1;
+		ASYNC(&controller,startSound,0);
+	}else{
+		self->play = 0;
+	}
 }
 void passive_backup(Controller *self, int unused)
 {
@@ -864,9 +880,9 @@ void reader(App *self, int c)
 	case 'p':
 		if (state == MASTER)
 		{
-			// SYNC(&generator, pause, 0);
-			// SYNC(&controller, pause_c, 0);
-			ASYNC(&controller, replay, 0);
+			//SYNC(&generator, pause, 0);
+			SYNC(&controller, pause_c, 0);
+			//ASYNC(&controller, replay, 0);
 		}
 
 		msg.msgId = 4;
@@ -948,9 +964,7 @@ void reader(App *self, int c)
 		ASYNC(&committee, exit_Failuremode, 0);
 		break;
 		
-		// Function: Compulsory leadership change
-	case 'd':
-		ASYNC(&controller, replay, 0);
+
 		break;
 	case 'M':
 		ASYNC(&watchdog, watchdogDebugOutput, 0);
@@ -1005,7 +1019,7 @@ void startApp(App *self, int arg)
 	SCI_WRITE(&sci0, "Ready for competing for leadership\n");
 	AFTER(SEC(4), &committee, initMode, 0);
 	// ASYNC(&controller,startSound,0);
-	ASYNC(&generator, play, 0);
+	// ASYNC(&generator, play, 0);
 
 	// Print volume and bpm with monitor, need to disscuss
 	// AFTER(SEC(10), &app, monitor, 0);

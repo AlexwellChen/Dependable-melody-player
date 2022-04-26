@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -87,7 +87,7 @@ void committee_recv(Committee *self, int addr)
             sprintf(strbuff, "Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
             // ASYNC(&controller, change_note, note);
-
+            ASYNC(&controller, set_play, 1);
             turn = 0;
             Bnum = self->boardNum;
             myRank = self->myRank;
