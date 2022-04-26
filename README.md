@@ -254,13 +254,17 @@ The Regulator is designed based on a circular queue. When a message is added to 
 
 The memory size of this buffer queue:
 $$
-B_{burst} \times sizeof(int) = 4B_{burst}
+B_{burst} \times sizeof(int) = 4B_{burst}\ (Bytes)
 $$
 The time complexity of operations:
 $$
-Inqueue = O(1)\\
+Enqueue = O(1)\\
 Dequeue = O(1)
 $$
 
 
 **Minimum DELTA**
+
+As we have seen, DELTA is designed to guarantee a minimum message processing interval. When the message arrival interval is greater than DELTA, the message can be processed immediately. Conversely, when the message arrival interval is less than DELTA, we should put it into Queue to wait for processing. Then when we want to know the minimum interval DELTA, we need to know the running time of the dequeue operation.
+
+In our Regulator implementation, which uses a circular queue design, we know the position of the current message to be processed in the array, i.e., tail, which is maintained in every dequeue operation. Therefore the time we need to consume is only the time to access a specific element of the array, so this time is a constant. As we mentioned earlier, the time complexity of our Dequeue is O(1). So the minimum value of Delta should be the running time of the dequeue.
