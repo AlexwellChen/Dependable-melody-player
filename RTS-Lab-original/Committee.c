@@ -88,7 +88,8 @@ void committee_recv(Committee *self, int addr)
             note = msg.buff[0];
             sprintf(strbuff, "Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
-            // ASYNC(&controller, change_note, note);
+            ASYNC(&controller, setLed, 0);
+            ASYNC(&controller, change_note, note);
             ASYNC(&controller, set_play, 1);
             turn = 0;
             Bnum = self->boardNum;
