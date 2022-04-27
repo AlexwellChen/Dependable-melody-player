@@ -431,3 +431,18 @@ void committeeDebugOutput(Committee *self, int arg)
     }
     SCI_WRITE(&sci0, "\n");
 }
+
+void F1_to_S(Committee *self, int arg)
+{
+    self->mode = SLAVE;
+}
+
+void F2_to_S(Committee *self, int arg)
+{
+    self->mode = SLAVE;
+}
+
+void F3_to_S(Committee *self, int arg)
+{
+    self->mode = SLAVE;
+}
