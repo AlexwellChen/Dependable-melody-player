@@ -192,7 +192,7 @@ void monitor(Watchdog *self, int unused)
     {
         CAN_SEND(&can0, &msg);
     }
-    AFTER(MSEC(SNOOP_INTERVAL*0.3), self, monitor, 0);
+    AFTER(MSEC(SEND_INTERVAL), self, monitor, 0);
 }
 
 int getMonitorFlag(Watchdog *self, int arg)
