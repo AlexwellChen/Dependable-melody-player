@@ -43,6 +43,7 @@ void watchdog_recv(Watchdog *self, int addr)
             self->networkState[myRank] = SLAVE;
         }
         self->networkState[msg.nodeId] = F_2;
+        ASYNC(&controller, passive_backup, 0);
 
         break;
     case 61: // Failure F1
@@ -55,6 +56,7 @@ void watchdog_recv(Watchdog *self, int addr)
             // and then the committee->mode will change to Slave.
         }
         self->networkState[msg.nodeId] = F_1;
+        ASYNC(&controller, passive_backup, 0);
 
         break;
     case 60: // New member join
@@ -85,6 +87,7 @@ void check(Watchdog *self, int unused)
         {
             cntDeactive++;
             self->networkState[i] = F_3; // passive enter F3
+            ASYNC(&controller, passive_backup, 0);
             // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
         if (self->networkState[i] == MASTER)
@@ -105,10 +108,10 @@ void check(Watchdog *self, int unused)
     self->masterNum = masterNum;
     self->slaveNum = slaveNum;
 
-    if (boardNum < previous_Bnum)
-    {
-        ASYNC(&controller, passive_backup, 0);
-    }
+    // if (boardNum < previous_Bnum)
+    // {
+    //     ASYNC(&controller, passive_backup, 0);
+    // }
 
     ASYNC(&committee, setBoardNum, boardNum);
 
