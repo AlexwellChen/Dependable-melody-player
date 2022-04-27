@@ -31,9 +31,6 @@ void watchdog_recv(Watchdog *self, int addr)
     {
     case 64:
         self->networkState[msg.nodeId] = MASTER;
-        if(mode != MASTER){
-            ASYNC(self, monitor, 0);
-        }
         break;
     case 63:
         self->networkState[msg.nodeId] = SLAVE;
@@ -86,7 +83,7 @@ void check(Watchdog *self, int unused)
         {
             self->networkStateforCheck[i] = self->networkState[i];
         }
-        
+
         if (self->networkStateforCheck[i] == DEACTIVE)
         {
             cntDeactive++;
