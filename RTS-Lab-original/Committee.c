@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -239,7 +239,23 @@ void send_GetLeadership_msg(Committee *self, int arg)
 //      msg.buff[0] = str_num[0];
 //      CAN_SEND(&can0, &msg);
 //  }
+void newCompete(Committee *self, int arg){
+    self->mode = MASTER;
+    self->leaderRank = self->myRank;
+    ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
 
+    AFTER(MSEC(SNOOP_INTERVAL*2.5), &controller, startSound, SYNC(&controller, getBpm, 0));
+
+    SCI_WRITE(&sci0, "Claimed Leadership!\n");
+    ASYNC(&controller, toggle_led, SYNC(&controller, getBpm, 0));
+    if (self->watchdogCnt == 0)
+    {
+        self->watchdogCnt++;
+        ASYNC(&watchdog, monitor, 0);
+        AFTER(MSEC(SNOOP_INTERVAL*2), &watchdog, check, 0);
+        SCI_WRITE(&sci0, "Watchdog start!\n");
+    }
+}
 void IorS_to_W(Committee *self, int arg)
 {
     // Trying to get leadership from init mode or slave mode
@@ -326,7 +342,7 @@ void checkLeaderExist(Committee *self, int unused)
     if (!SYNC(&watchdog, isMasterExist, 0))
     {
         SCI_WRITE(&sci0, "No master in network!\n");
-        SYNC(self, compete, 0);
+        SYNC(self, newCompete, 0);
         SYNC(&controller, replay, 0);
         //BUG: repeat hear note 0.
         // ASYNC(&controller, startSound, 0);

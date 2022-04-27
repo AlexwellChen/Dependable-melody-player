@@ -117,7 +117,7 @@ void check(Watchdog *self, int unused)
 
     if (masterNum > 1)
     {
-        ASYNC(&committee, compete, 0);
+        ASYNC(&committee, newCompete, 0);
     }
 
     if (myMode == F_3 && boardNum > 0)
@@ -141,14 +141,14 @@ void check(Watchdog *self, int unused)
             // ASYNC(&committee, D_to_F3, 0);
             if (self->networkState[leaderRank] == F_1 || self->networkState[leaderRank] == F_2)
             {
-                ASYNC(&committee, compete, 0);
+                ASYNC(&committee, newCompete, 0);
             }else{
                 ASYNC(&controller, set_play, 0);
             }
         }
         else if (myMode != F_1 && myMode != F_2 && myMode != F_3)
         {
-            ASYNC(&committee, compete, 0);
+            ASYNC(&committee, newCompete, 0);
         }
         // Is it possible get a FFF here?
     }
