@@ -38,6 +38,7 @@ void initBoardNum(Committee *, int);
 void initMode(Committee *, int);
 void change_StateAfterCompete(Committee *, int);
 void compete(Committee *, int);
+void newCompete(Committee *, int );
 int read_state(Committee *, int);
 int getMyRank(Committee *, int);
 int getLeaderRank(Committee *, int);
