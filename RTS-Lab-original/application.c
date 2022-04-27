@@ -815,7 +815,9 @@ void reader(App *self, int c)
 	switch (c)
 	{
 	case 'o':
-		ASYNC(&committee, newCompete, 0);
+		if(state != MASTER){
+			ASYNC(&committee, newCompete, 0);
+		}
 		// ASYNC(&committee, IorS_to_M, 0);
 		// ASYNC(self, send_DeclareLeader_msg, 0);
 		break;
