@@ -44,11 +44,12 @@ void committee_recv(Committee *self, int addr)
             self->mode = SLAVE;
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
-            ASYNC(&watchdog, monitor, 0);
+            
             self->leaderRank = msg.nodeId;
             if (self->watchdogCnt == 0)
             {
                 self->watchdogCnt++;
+                ASYNC(&watchdog, monitor, 0);
                 AFTER(MSEC(SNOOP_INTERVAL*2), &watchdog, check, 0);
                 SCI_WRITE(&sci0, "Watchdog start!\n");
             }
