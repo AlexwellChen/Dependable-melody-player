@@ -18,7 +18,7 @@ void watchdog_recv(Watchdog *self, int addr)
     CANMsg msg = *(CANMsg *)addr;
     char strbuff[100];
     snprintf(strbuff, 100, "Watchdog MSGID: %d\n", msg.msgId);
-    if (msg.msgId != 119)
+    if (msg.msgId != 64 && msg.msgId != 63)
     {
         SCI_WRITE(&sci0, strbuff);
     }

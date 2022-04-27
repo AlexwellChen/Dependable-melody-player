@@ -87,7 +87,7 @@ void committee_recv(Committee *self, int addr)
         switch (msg.msgId)
         {
         case 119:
-            note = msg.buff[0];
+            note = msg.buff[0] % 32;
             sprintf(strbuff, "Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
             ASYNC(&controller, setLed, 0);
@@ -170,7 +170,7 @@ void send_BoardNum_msg(Committee *self, int arg)
     msg.msgId = 126;
     // char str_num[1];
     // sprintf(str_num, "%d", abs(self->boardNum));
-    msg.length = 2;
+    msg.length = 8;
     msg.buff[0] = self->boardNum;
     CAN_SEND(&can0, &msg);
 }

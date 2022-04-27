@@ -345,15 +345,17 @@ void receiver(App *self, int unused)
 
 void pause_slave(Controller *self, int arg)
 {
-	if (self->play == 1)
-	{
-		self->play = 0;
-	}
-	else
-	{
-		self->play = 1;
-	}
+	// if (self->play == 1)
+	// {
+	// 	self->play = 0;
+	// }
+	// else
+	// {
+	// 	self->play = 1;
+	// }
+	self->play = 0;
 }
+
 void volume_control(Sound *self, int inc)
 {
 	if (inc == 1 && self->volume < 20)
@@ -653,6 +655,7 @@ void pause(Sound *self, int arg)
 }
 void pause_c(Controller *self, int arg)
 {
+	CANMsg msg;
 	self->play = !self->play;
 	ASYNC(&controller, toggle_led, self->bpm);
 	int state = SYNC(&committee, read_state, 0);
@@ -660,9 +663,15 @@ void pause_c(Controller *self, int arg)
 	if (state == MASTER && self->play == 1)
 	{
 		self->note = 0;
-		ASYNC(self, startSound, 0);
+		ASYNC(self, startSound, SYNC(&controller, getBpm, 0));
 
 		// ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
+	}
+	if(self->play == 1){
+		msg.msgId = 4;
+		msg.nodeId = 0;
+		msg.length = 8;
+		CAN_SEND(&can0, &msg);
 	}
 }
 
@@ -717,7 +726,7 @@ void send_key_msg(App *self, int num)
 	msg.nodeId = self->myRank;
 	// char str_num;
 	// sprintf(str_num, "%d", abs(num));
-	msg.length = 2;
+	msg.length = 8;
 	// msg.buff[0] = str_num;
 	msg.buff[0] = abs(num);
 	CAN_SEND(&can0, &msg);
@@ -730,7 +739,7 @@ void send_bpm_msg(App *self, int num)
 	sprintf(str_num, "%d", num);
 	msg.msgId = 7;
 	msg.nodeId = self->myRank;
-	msg.length = 2;
+	msg.length = 8;
 	// msg.buff[0] = str_num[0];
 	// msg.buff[1] = str_num[1];
 	// if (num > 99)
@@ -757,7 +766,7 @@ void send_note_msg(App *self, int noteId)
 	CANMsg msg;
 	msg.msgId = 119;
 	msg.nodeId = self->myRank;
-	msg.length = 2;
+	msg.length = 8;
 	// char str_num[2];
 	// sprintf(str_num, "%d", noteId);
 	// if(noteId < 10){
@@ -858,7 +867,7 @@ void reader(App *self, int c)
 
 		msg.msgId = 1;
 		msg.nodeId = 0;
-		msg.length = 0;
+		msg.length = 8;
 		CAN_SEND(&can0, &msg);
 
 		break;
@@ -871,7 +880,7 @@ void reader(App *self, int c)
 
 		msg.msgId = 2;
 		msg.nodeId = 0;
-		msg.length = 0;
+		msg.length = 8;
 		CAN_SEND(&can0, &msg);
 		break;
 	case 'm':
@@ -895,10 +904,10 @@ void reader(App *self, int c)
 			// ASYNC(&controller, replay, 0);
 		}
 
-		msg.msgId = 4;
-		msg.nodeId = 0;
-		msg.length = 0;
-		CAN_SEND(&can0, &msg);
+		// msg.msgId = 4;
+		// msg.nodeId = 0;
+		// msg.length = 8;
+		// CAN_SEND(&can0, &msg);
 
 		break;
 	case 'x':
