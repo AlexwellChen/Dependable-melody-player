@@ -31,9 +31,11 @@ void watchdog_recv(Watchdog *self, int addr)
     {
     case 64:
         self->networkState[msg.nodeId] = MASTER;
+        self->networkStateforCheck[msg.nodeId] = MASTER;
         break;
     case 63:
         self->networkState[msg.nodeId] = SLAVE;
+        self->networkStateforCheck[msg.nodeId] = SLAVE;
         break;
     case 62: // Failure F2
         if (mode == F_3)
