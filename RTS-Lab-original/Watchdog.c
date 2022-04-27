@@ -86,7 +86,7 @@ void check(Watchdog *self, int unused)
             self->networkStateforCheck[i] = self->networkState[i];
         }
 
-        if (self->networkStateforCheck[i] == DEACTIVE)
+        if (self->networkState[i] == DEACTIVE)
         {
             cntDeactive++;
             self->networkState[i] = F_3; // passive enter F3
@@ -95,12 +95,12 @@ void check(Watchdog *self, int unused)
             SCI_WRITE(&sci0, strbuff);
             // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
-        if (self->networkStateforCheck[i] == MASTER)
+        if (self->networkState[i] == MASTER)
         {
             boardNum++;
             masterNum++;
         }
-        if (self->networkStateforCheck[i] == SLAVE)
+        if (self->networkState[i] == SLAVE)
         {
             boardNum++;
             slaveNum++;
@@ -143,7 +143,7 @@ void check(Watchdog *self, int unused)
         if (boardNum == 1 && myMode == SLAVE)
         {
             // ASYNC(&committee, D_to_F3, 0);
-            if (self->networkStateforCheck[leaderRank] == F_1 || self->networkStateforCheck[leaderRank] == F_2)
+            if (self->networkState[leaderRank] == F_1 || self->networkState[leaderRank] == F_2)
             {
                 ASYNC(&committee, newCompete, 0);
                 snprintf(strbuff, 100, "Compete at Master in F1 and F2\n");
