@@ -520,6 +520,7 @@ void setLed(Controller *self, int arg)
 		SIO_WRITE(&sio0, 1);
 	}
 }
+
 int judgePlay(Sound *self, int note)
 {
 	int num = SYNC(&committee, getBoardNum, 0);

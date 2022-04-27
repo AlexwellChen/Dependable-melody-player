@@ -31,7 +31,9 @@ void watchdog_recv(Watchdog *self, int addr)
     {
     case 64:
         self->networkState[msg.nodeId] = MASTER;
-        ASYNC(self, monitor, 0);
+        if(mode != MASTER){
+            ASYNC(self, monitor, 0);
+        }
         break;
     case 63:
         self->networkState[msg.nodeId] = SLAVE;
@@ -81,18 +83,20 @@ void check(Watchdog *self, int unused)
     for (int i = 0; i < 3; i++)
     {
 
-        if (self->networkState[i] == DEACTIVE)
+        if (self->networkStateforCheck[i] == DEACTIVE)
         {
             cntDeactive++;
             self->networkState[i] = F_3; // passive enter F3
+            snprintf(strbuff, 100, "board %d out\n", i);
+            SCI_WRITE(&sci0, strbuff);
             // ASYNC(&committee, setBoardNum, boardNum - 1);
         }
-        if (self->networkState[i] == MASTER)
+        if (self->networkStateforCheck[i] == MASTER)
         {
             boardNum++;
             masterNum++;
         }
-        if (self->networkState[i] == SLAVE)
+        if (self->networkStateforCheck[i] == SLAVE)
         {
             boardNum++;
             slaveNum++;

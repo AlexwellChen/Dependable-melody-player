@@ -49,7 +49,7 @@ void committee_recv(Committee *self, int addr)
             if (self->watchdogCnt == 0)
             {
                 self->watchdogCnt++;
-                AFTER(MSEC(SNOOP_INTERVAL), &watchdog, check, 0);
+                AFTER(MSEC(SNOOP_INTERVAL*0.5), &watchdog, check, 0);
                 SCI_WRITE(&sci0, "Watchdog start!\n");
             }
             ASYNC(&controller, setLed, 0);
@@ -75,6 +75,7 @@ void committee_recv(Committee *self, int addr)
         case 123:
             self->mode = SLAVE;
             self->leaderRank = msg.nodeId;
+            
             SCI_WRITE(&sci0, "Leadership Void\n");
             break;
         }
@@ -249,14 +250,14 @@ void IorS_to_M(Committee *self, int arg)
     self->mode = MASTER;
     self->leaderRank = self->myRank;
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
-    ASYNC(&controller, startSound, SYNC(&controller, getBpm, 0));
+    AFTER(MSEC(SNOOP_INTERVAL*0.6), &controller, startSound, SYNC(&controller, getBpm, 0));
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
     ASYNC(&controller, toggle_led, SYNC(&controller, getBpm, 0));
     ASYNC(&watchdog, monitor, 0);
     if (self->watchdogCnt == 0)
     {
         self->watchdogCnt++;
-        AFTER(MSEC(SNOOP_INTERVAL), &watchdog, check, 0);
+        AFTER(MSEC(SNOOP_INTERVAL*0.5), &watchdog, check, 0);
         SCI_WRITE(&sci0, "Watchdog start!\n");
     }
 }
