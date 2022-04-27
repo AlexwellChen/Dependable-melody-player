@@ -31,7 +31,7 @@ void watchdog_recv(Watchdog *self, int addr)
     {
     case 64:
         self->networkState[msg.nodeId] = MASTER;
-        ASYNC(self, monitor, 0);
+        // ASYNC(self, monitor, 0);
         break;
     case 63:
         self->networkState[msg.nodeId] = SLAVE;
@@ -187,12 +187,12 @@ void monitor(Watchdog *self, int unused)
         msg.msgId = 61;
         break;
     }
+    
     if (myMode != F_1 && myMode != F_2)
     {
         CAN_SEND(&can0, &msg);
     }
-    if (myMode == MASTER)
-        AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
+    AFTER(MSEC(SNOOP_INTERVAL*0.3), self, monitor, 0);
 }
 
 int getMonitorFlag(Watchdog *self, int arg)
