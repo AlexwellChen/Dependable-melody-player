@@ -667,7 +667,7 @@ void pause_c(Controller *self, int arg)
 
 		// ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
-	if(self->play == 1){
+	if(self->play == 0){
 		msg.msgId = 4;
 		msg.nodeId = 0;
 		msg.length = 8;
