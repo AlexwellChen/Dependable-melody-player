@@ -271,6 +271,12 @@ void send_Recovery_ack(Watchdog *self, int unused)
     }
 }
 
+void updateStoM(Watchdog *self, int arg){
+    int myRank = SYNC(&committee, getMyRank, 0);
+    self->networkState[myRank] = arg;
+    self->networkStateforCheck[myRank] = arg;
+}
+
 void watchdogDebugOutput(Watchdog *self, int arg)
 {
     char strbuff[100];

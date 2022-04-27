@@ -42,6 +42,7 @@ void committee_recv(Committee *self, int addr)
         {
             // For initMode function
             self->mode = SLAVE;
+            ASYNC(&watchdog, updateStoM, SLAVE);
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
             
@@ -249,6 +250,7 @@ void IorS_to_W(Committee *self, int arg)
 void IorS_to_M(Committee *self, int arg)
 {
     self->mode = MASTER;
+    ASYNC(&watchdog, updateStoM, MASTER);
     self->leaderRank = self->myRank;
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
     AFTER(MSEC(SNOOP_INTERVAL*2.5), &controller, startSound, SYNC(&controller, getBpm, 0));
@@ -338,6 +340,7 @@ void exit_Failuremode(Committee *self, int arg)
 {
     SCI_WRITE(&sci0, "Leave Silent Failure\n");
     self->mode = SLAVE;
+    ASYNC(&watchdog, updateStoM, SLAVE);
     self->boardNum++;
     // self->leaderRank = -1;
     ASYNC(&watchdog, send_Recovery_msg, 0);
@@ -354,6 +357,7 @@ void enter_Failure(Committee *self, int arg)
     if (arg == 1)
     {
         self->mode = F_1;
+        ASYNC(&watchdog, updateStoM, F_1);
         // ASYNC(&watchdog, send_F1_msg, 0);
         ASYNC(&app, compulsory_mute, 0);
         self->boardNum = 1;
@@ -361,6 +365,7 @@ void enter_Failure(Committee *self, int arg)
     else if (arg == 2)
     {
         self->mode = F_2;
+        ASYNC(&watchdog, updateStoM, F_2);
         self->boardNum = 0;
         // ASYNC(&watchdog, send_F2_msg, 0);
         ASYNC(&app, compulsory_mute, 0);
@@ -374,6 +379,7 @@ void enter_Failure(Committee *self, int arg)
 void recover_Failure1mode(Committee *self, int arg)
 {
     if (self->mode == F_1)
+
         self->mode = SLAVE;
 }
 
