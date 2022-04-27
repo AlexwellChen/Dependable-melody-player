@@ -32,4 +32,6 @@ void send_F2_msg(Watchdog *, int);
 void send_Recovery_msg(Watchdog *, int);
 void send_Recovery_ack(Watchdog *, int);
 void watchdogDebugOutput(Watchdog *, int);
+void updateMasterNetworkstate(Watchdog *, int);
+void updateSlaveNetworkstate(Watchdog *, int);
 #endif

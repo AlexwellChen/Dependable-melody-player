@@ -42,6 +42,7 @@ void committee_recv(Committee *self, int addr)
         {
             // For initMode function
             self->mode = SLAVE;
+            ASYNC(&watchdog, updateSlaveNetworkstate, self->myRank);
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
             // ASYNC(&watchdog, monitor, 0);
@@ -75,6 +76,7 @@ void committee_recv(Committee *self, int addr)
         {
         case 123:
             self->mode = SLAVE;
+            ASYNC(&watchdog, updateSlaveNetworkstate, self->myRank);
             self->leaderRank = msg.nodeId;
             SCI_WRITE(&sci0, "Leadership Void\n");
             break;
@@ -242,10 +244,12 @@ void send_GetLeadership_msg(Committee *self, int arg)
 //  }
 void newCompete(Committee *self, int arg){
     self->mode = MASTER;
+    ASYNC(&watchdog, updateSlaveNetworkstate, self->leaderRank);
     self->leaderRank = self->myRank;
+    ASYNC(&watchdog, updateMasterNetworkstate, self->myRank);
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
     SCI_WRITE(&sci0, "newCompete startSound!\n");
-    AFTER(MSEC(SNOOP_INTERVAL*2.5), &controller, startSound, SYNC(&controller, getBpm, 0));
+    AFTER(MSEC(SNOOP_INTERVAL), &controller, startSound, SYNC(&controller, getBpm, 0));
 
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
     ASYNC(&controller, toggle_led, SYNC(&controller, getBpm, 0));
@@ -253,7 +257,7 @@ void newCompete(Committee *self, int arg){
     {
         self->watchdogCnt++;
         ASYNC(&watchdog, monitor, 0);
-        AFTER(MSEC(SNOOP_INTERVAL*2), &watchdog, check, 0);
+        AFTER(MSEC(SNOOP_INTERVAL), &watchdog, check, 0);
         SCI_WRITE(&sci0, "Watchdog start!\n");
     }
 }

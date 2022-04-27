@@ -265,6 +265,15 @@ void send_Recovery_ack(Watchdog *self, int unused)
     }
 }
 
+void updateMasterNetworkstate(Watchdog *self, int arg){
+    self->networkState[arg] = MASTER;
+    self->networkStateforCheck[arg] = MASTER;
+}
+void updateSlaveNetworkstate(Watchdog *self, int arg){
+    self->networkState[arg] = SLAVE;
+    self->networkStateforCheck[arg] = SLAVE;
+}
+
 void watchdogDebugOutput(Watchdog *self, int arg)
 {
     char strbuff[100];
