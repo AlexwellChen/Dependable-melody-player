@@ -816,7 +816,7 @@ void reader(App *self, int c)
 	switch (c)
 	{
 	case 'o':
-		ASYNC(&committee, compete, 0);
+		ASYNC(&committee, newCompete, 0);
 		// ASYNC(&committee, IorS_to_M, 0);
 		// ASYNC(self, send_DeclareLeader_msg, 0);
 		break;
@@ -976,8 +976,8 @@ void reader(App *self, int c)
 		ASYNC(&watchdog, watchdogDebugOutput, 0);
 		break;
 	case 'S':
-		ASYNC(&committee, F1_to_S, 0);
-		SCI_WRITE(&sci0, "Force to Slave\n");
+		//ASYNC(&committee, F1_to_S, 0);
+		//SCI_WRITE(&sci0, "Force to Slave\n");
 		break;
 	}
 

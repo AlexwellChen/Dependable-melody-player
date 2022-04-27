@@ -121,7 +121,7 @@ void check(Watchdog *self, int unused)
     {
         snprintf(strbuff, 100, "Compete at Master num > 1\n");
         SCI_WRITE(&sci0, strbuff);
-        ASYNC(&committee, compete, 0);
+        ASYNC(&committee, newCompete, 0);
     }
 
     if (myMode == F_3 && boardNum > 0)
@@ -145,7 +145,7 @@ void check(Watchdog *self, int unused)
             // ASYNC(&committee, D_to_F3, 0);
             if (self->networkStateforCheck[leaderRank] == F_1 || self->networkStateforCheck[leaderRank] == F_2)
             {
-                ASYNC(&committee, compete, 0);
+                ASYNC(&committee, newCompete, 0);
                 snprintf(strbuff, 100, "Compete at Master in F1 and F2\n");
                 SCI_WRITE(&sci0, strbuff);
             }else{
@@ -156,7 +156,7 @@ void check(Watchdog *self, int unused)
         {
             snprintf(strbuff, 100, "Compete at Master out, 2 slaves\n");
             SCI_WRITE(&sci0, strbuff);
-            ASYNC(&committee, compete, 0);
+            ASYNC(&committee, newCompete, 0);
         }
         // Is it possible get a FFF here?
     }
