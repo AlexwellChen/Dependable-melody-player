@@ -35,7 +35,6 @@ void watchdog_recv(Watchdog *self, int addr)
         break;
     case 63:
         self->networkState[msg.nodeId] = SLAVE;
-        ASYNC(self, monitor, 0);
         break;
     case 62: // Failure F2
         if (mode == F_3)
@@ -158,11 +157,11 @@ void check(Watchdog *self, int unused)
     {
         self->networkState[i] = DEACTIVE;
     }
-    self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
-    if (myMode == F_1 || myMode == F_2)
-    {
-        ASYNC(self, monitor, 0);
-    }
+    // self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
+    // if (myMode == F_1 || myMode == F_2)
+    // {
+    //     ASYNC(self, monitor, 0);
+    // }
 }
 
 void monitor(Watchdog *self, int unused)
@@ -195,8 +194,8 @@ void monitor(Watchdog *self, int unused)
     {
         CAN_SEND(&can0, &msg);
     }
-    if (myMode == MASTER)
-        AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
+    // if (myMode == MASTER)
+    AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
 }
 
 int getMonitorFlag(Watchdog *self, int arg)
