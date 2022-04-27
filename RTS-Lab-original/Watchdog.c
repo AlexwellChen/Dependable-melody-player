@@ -105,7 +105,7 @@ void check(Watchdog *self, int unused)
     self->masterNum = masterNum;
     self->slaveNum = slaveNum;
 
-    if (boardNum < previous_Bnum)
+    if (boardNum < previous_Bnum )
     {
         snprintf(strbuff, 100, "boardNum: %d, previous num: %d, master num: %d, slave num: %d\n", boardNum, previous_Bnum, masterNum, slaveNum);
         SCI_WRITE(&sci0, strbuff);
@@ -117,6 +117,9 @@ void check(Watchdog *self, int unused)
 
     if (masterNum > 1)
     {
+        snprintf(strbuff, 100, "Master num > 1 compete\n");
+        ASYNC(self, watchdogDebugOutput, 0);
+        SCI_WRITE(&sci0, strbuff);
         ASYNC(&committee, newCompete, 0);
     }
 
@@ -140,14 +143,20 @@ void check(Watchdog *self, int unused)
         {
             // ASYNC(&committee, D_to_F3, 0);
             if (self->networkState[leaderRank] == F_1 || self->networkState[leaderRank] == F_2)
-            {
+            {   
+                snprintf(strbuff, 100, "No master compete\n");
+                ASYNC(self, watchdogDebugOutput, 0);
+                SCI_WRITE(&sci0, strbuff);
                 ASYNC(&committee, newCompete, 0);
             }else{
                 ASYNC(&controller, set_play, 0);
             }
         }
-        else if (myMode != F_1 && myMode != F_2 && myMode != F_3)
+        else if (myMode == SLAVE)
         {
+            snprintf(strbuff, 100, "2 slaves compete\n");
+            ASYNC(self, watchdogDebugOutput, 0);
+            SCI_WRITE(&sci0, strbuff);
             ASYNC(&committee, newCompete, 0);
         }
         // Is it possible get a FFF here?
@@ -272,6 +281,15 @@ void updateMasterNetworkstate(Watchdog *self, int arg){
 void updateSlaveNetworkstate(Watchdog *self, int arg){
     self->networkState[arg] = SLAVE;
     self->networkStateforCheck[arg] = SLAVE;
+}
+
+void updateF1Networkstate(Watchdog *self, int arg){
+    self->networkState[arg] = F_1;
+    self->networkStateforCheck[arg] = F_1;
+}
+void updateF2Networkstate(Watchdog *self, int arg){
+    self->networkState[arg] = F_2;
+    self->networkStateforCheck[arg] = F_2;
 }
 
 void watchdogDebugOutput(Watchdog *self, int arg)

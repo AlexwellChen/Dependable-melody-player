@@ -659,7 +659,8 @@ void pause_c(Controller *self, int arg)
 
 	if (state == MASTER && self->play == 1)
 	{
-		ASYNC(self, replay, 0);
+		self->note = 0;
+		ASYNC(self, startSound, 0);
 
 		// ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
@@ -791,7 +792,8 @@ void set_play(Controller *self, int flag)
 void replay(Controller *self, int unused)
 {
 	self->note = 0;
-	ASYNC(&controller, startSound, 0);
+	self->play = 1;
+	// ASYNC(&controller, startSound, 0);
 }
 void passive_backup(Controller *self, int unused)
 {

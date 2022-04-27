@@ -6,7 +6,7 @@
 #define DEACTIVE -2
 #define ACTIVE 6
 #define SNOOP_INTERVAL 800
-#define SEND_INTERVAL 100
+#define SEND_INTERVAL 250
 typedef struct
 {
 	Object super;
@@ -34,4 +34,6 @@ void send_Recovery_ack(Watchdog *, int);
 void watchdogDebugOutput(Watchdog *, int);
 void updateMasterNetworkstate(Watchdog *, int);
 void updateSlaveNetworkstate(Watchdog *, int);
+void updateF1Networkstate(Watchdog *, int);
+void updateF2Networkstate(Watchdog *, int);
 #endif
