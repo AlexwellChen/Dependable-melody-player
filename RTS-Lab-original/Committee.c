@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -45,7 +45,12 @@ void committee_recv(Committee *self, int addr)
             ASYNC(&watchdog, updateStoM, SLAVE);
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
-            
+            int volume = SYNC(&generator, getMute, 0);
+            if(volume==0){
+                SIO_WRITE(&sio0,1);
+            }else{
+                SIO_WRITE(&sio0,0);
+            }
             self->leaderRank = msg.nodeId;
             if (self->watchdogCnt == 0)
             {
