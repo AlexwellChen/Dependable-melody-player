@@ -83,7 +83,7 @@ void committee_recv(Committee *self, int addr)
             self->mode = SLAVE;
             ASYNC(&watchdog, updateStoM, SLAVE);
             self->leaderRank = msg.nodeId;
-            
+            ASYNC(&watchdog, updateMasterInNetworkState, self->leaderRank);
             SCI_WRITE(&sci0, "Leadership Void\n");
             break;
         }
