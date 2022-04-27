@@ -22,6 +22,7 @@ typedef struct
 	int mode;		// init with INIT
 	int isLeader;
 	int watchdogCnt;
+	int soundCnt;
 } Committee;
 
 void committee_recv(Committee *, int);
@@ -48,6 +49,8 @@ void enter_Failure(Committee *, int);
 void exit_Failuremode(Committee *, int);
 void changeLeaderRank(Committee *, int);
 void committeeDebugOutput(Committee *, int);
+int getSoundCnt(Committee *, int);
+void setSoundCnt(Committee *, int);
 void D_to_F1(Committee *, int);
 void D_to_F2(Committee *, int);
 void D_to_F3(Committee *, int);

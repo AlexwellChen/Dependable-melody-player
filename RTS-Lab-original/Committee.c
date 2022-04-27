@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 0, -1, INIT, 1, 0, 0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -261,7 +261,11 @@ void newCompete(Committee *self, int arg){
     ASYNC(&watchdog, updateSlaveInNetworkState, self->leaderRank);
     self->leaderRank = self->myRank;
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
-    AFTER(MSEC(SNOOP_INTERVAL*2.5), &controller, startSound, SYNC(&controller, getBpm, 0));
+    if(self->soundCnt == 0){
+        AFTER(MSEC(SNOOP_INTERVAL*2.5), &controller, startSound, SYNC(&controller, getBpm, 0));
+        self->soundCnt++;
+    }
+    
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
     ASYNC(&controller, toggle_led, SYNC(&controller, getBpm, 0));
     if (self->watchdogCnt == 0)
@@ -361,6 +365,14 @@ void checkLeaderExist(Committee *self, int unused)
     // leader exist, do nothing.
     
 }
+int getSoundCnt(Committee *self, int arg){
+    return self->soundCnt;
+}
+
+void setSoundCnt(Committee *self, int arg){
+    self->soundCnt = arg;
+}
+
 void exit_Failuremode(Committee *self, int arg)
 {
     SCI_WRITE(&sci0, "Leave Silent Failure\n");

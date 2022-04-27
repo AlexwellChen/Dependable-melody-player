@@ -614,8 +614,8 @@ void startSound(Controller *self, int arg)
 	ASYNC(&generator, reset_gap, 0);
 	ASYNC(&generator, generateTone, 0);
 	SEND(MSEC(tempo * 500 * interval - 50), MSEC(50), &generator, gap, 0);
-
-	if (state == MASTER)
+	int soundCnt = SYNC(&committee, getSoundCnt, 0);
+	if (state == MASTER &&  soundCnt== 1)
 	{
 		self->note = (self->note + 1) % 32;
 		// only master repeats calling itself
@@ -623,6 +623,7 @@ void startSound(Controller *self, int arg)
 	}
 	else
 	{
+		ASYNC(&committee, setSoundCnt, soundCnt - 1);
 		return;
 	}
 }
