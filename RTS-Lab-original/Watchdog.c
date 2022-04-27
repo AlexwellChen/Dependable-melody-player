@@ -107,6 +107,9 @@ void check(Watchdog *self, int unused)
 
     if (boardNum < previous_Bnum)
     {
+        snprintf(strbuff, 100, "boardNum: %d, previous num: %d, master num: %d, slave num: %d", boardNum, previous_Bnum, masterNum, slaveNum);
+        SCI_WRITE(&sci0, strbuff);
+
         ASYNC(&controller, passive_backup, 0);
     }
 
