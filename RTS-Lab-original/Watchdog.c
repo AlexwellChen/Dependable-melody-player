@@ -82,7 +82,11 @@ void check(Watchdog *self, int unused)
     char strbuff[50];
     for (int i = 0; i < 3; i++)
     {
-
+        if (myMode != F_1 && myMode != F_2)
+        {
+            self->networkStateforCheck[i] = self->networkState[i];
+        }
+        
         if (self->networkStateforCheck[i] == DEACTIVE)
         {
             cntDeactive++;
@@ -101,10 +105,7 @@ void check(Watchdog *self, int unused)
             boardNum++;
             slaveNum++;
         }
-        if (myMode != F_1 && myMode != F_2)
-        {
-            self->networkStateforCheck[i] = self->networkState[i];
-        }
+        
     }
     self->masterNum = masterNum;
     self->slaveNum = slaveNum;
