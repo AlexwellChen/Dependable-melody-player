@@ -656,7 +656,8 @@ void pause(Sound *self, int arg)
 void pause_c(Controller *self, int arg)
 {
 	self->play = !self->play;
-	ASYNC(&controller, toggle_led, self->bpm);
+	if(self->play)
+		ASYNC(&controller, toggle_led, self->bpm);
 	int state = SYNC(&committee, read_state, 0);
 
 	if (state == MASTER && self->play == 1)
@@ -817,6 +818,7 @@ void reader(App *self, int c)
 	switch (c)
 	{
 	case 'o':
+	if(state != MASTER)
 		ASYNC(&committee, newCompete, 0);
 		// ASYNC(&committee, IorS_to_M, 0);
 		// ASYNC(self, send_DeclareLeader_msg, 0);
