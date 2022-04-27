@@ -158,11 +158,11 @@ void check(Watchdog *self, int unused)
     {
         self->networkState[i] = DEACTIVE;
     }
-    self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
-    if (myMode == F_1 || myMode == F_2)
-    {
-        ASYNC(self, monitor, 0);
-    }
+    // self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
+    // if (myMode == F_1 || myMode == F_2)
+    // {
+    //     ASYNC(self, monitor, 0);
+    // }
 }
 
 void monitor(Watchdog *self, int unused)
@@ -195,8 +195,7 @@ void monitor(Watchdog *self, int unused)
     {
         CAN_SEND(&can0, &msg);
     }
-    if (myMode == MASTER)
-        AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
+    AFTER(MSEC(SNOOP_INTERVAL), self, monitor, 0);
 }
 
 int getMonitorFlag(Watchdog *self, int arg)

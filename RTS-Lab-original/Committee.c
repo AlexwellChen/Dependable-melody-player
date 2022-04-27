@@ -44,7 +44,7 @@ void committee_recv(Committee *self, int addr)
             self->mode = SLAVE;
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
-            // ASYNC(&watchdog, monitor, 0);
+            ASYNC(&watchdog, monitor, 0);
             self->leaderRank = msg.nodeId;
             if (self->watchdogCnt == 0)
             {
