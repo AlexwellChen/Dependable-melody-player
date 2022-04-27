@@ -107,7 +107,7 @@ void check(Watchdog *self, int unused)
 
     if (boardNum < previous_Bnum)
     {
-        snprintf(strbuff, 100, "boardNum: %d, previous num: %d, master num: %d, slave num: %d", boardNum, previous_Bnum, masterNum, slaveNum);
+        snprintf(strbuff, 100, "boardNum: %d, previous num: %d, master num: %d, slave num: %d\n", boardNum, previous_Bnum, masterNum, slaveNum);
         SCI_WRITE(&sci0, strbuff);
 
         ASYNC(&controller, passive_backup, 0);
@@ -160,7 +160,7 @@ void check(Watchdog *self, int unused)
     self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
     if (myMode == F_1 || myMode == F_2)
     {
-        ASYNC(self, monitor, 0);
+        // ASYNC(self, monitor, 0);
     }
 }
 
