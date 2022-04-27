@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 0, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -256,6 +256,7 @@ void IorS_to_W(Committee *self, int arg)
 void newCompete(Committee *self, int arg){
      self->mode = MASTER;
     ASYNC(&watchdog, updateStoM, MASTER);
+    ASYNC(&watchdog, updateSlaveInNetworkState, self->leaderRank);
     self->leaderRank = self->myRank;
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
     AFTER(MSEC(SNOOP_INTERVAL*2.5), &controller, startSound, SYNC(&controller, getBpm, 0));

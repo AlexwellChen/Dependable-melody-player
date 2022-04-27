@@ -26,6 +26,7 @@ int getMonitorFlag(Watchdog *, int);
 void setMonitorFlag(Watchdog *, int);
 void updateStoM(Watchdog *, int);
 void updateMasterInNetworkState(Watchdog *, int);
+void updateSlaveInNetworkState(Watchdog *, int);
 //void send_ResponseWatchdog_msg(Watchdog *, int);
 int isMasterExist(Watchdog *, int);
 void send_F1_msg(Watchdog *, int);
