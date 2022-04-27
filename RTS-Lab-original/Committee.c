@@ -12,7 +12,7 @@ extern float periods[];
 extern int beats[];
 extern int myIndex[];
 
-Committee committee = {initObject(), 1, 0, -1, INIT, 1,0};
+Committee committee = {initObject(), 1, 1, -1, INIT, 1,0};
 
 void committee_recv(Committee *self, int addr)
 {
@@ -45,12 +45,8 @@ void committee_recv(Committee *self, int addr)
             ASYNC(&watchdog, updateStoM, SLAVE);
             // ASYNC(&app, setMode, SLAVE);
             // TODO: SYNC(initWatchdog)
-            int volume = SYNC(&generator, getMute, 0);
-            if(volume==0){
-                SIO_WRITE(&sio0,1);
-            }else{
-                SIO_WRITE(&sio0,0);
-            }
+           
+           
             self->leaderRank = msg.nodeId;
             if (self->watchdogCnt == 0)
             {
@@ -85,6 +81,12 @@ void committee_recv(Committee *self, int addr)
             self->leaderRank = msg.nodeId;
             ASYNC(&watchdog, updateMasterInNetworkState, self->leaderRank);
             SCI_WRITE(&sci0, "Leadership Void\n");
+             int volume = SYNC(&generator, getMute, 0);
+             if(volume==0){
+                SIO_WRITE(&sio0,1);
+            }else{
+                SIO_WRITE(&sio0,0);
+            }
             break;
         }
         break;
@@ -96,7 +98,7 @@ void committee_recv(Committee *self, int addr)
             note = msg.buff[0];
             sprintf(strbuff, "Note is: %d \n", note);
             SCI_WRITE(&sci0, strbuff);
-            // ASYNC(&controller, change_note, note);
+            ASYNC(&controller, change_note, note);
             ASYNC(&controller, set_play, 1);
             turn = 0;
             Bnum = self->boardNum;
@@ -351,7 +353,7 @@ void checkLeaderExist(Committee *self, int unused)
     if (!SYNC(&watchdog, isMasterExist, 0))
     {
         SCI_WRITE(&sci0, "No master in network!\n");
-        SYNC(self, compete, 0);
+        SYNC(self, newCompete, 0);
         SYNC(&controller, replay, 0);
         //BUG: repeat hear note 0.
         // ASYNC(&controller, startSound, 0);
