@@ -127,6 +127,9 @@ void committee_recv(Committee *self, int addr)
             }
             break;
         }
+        case 123:
+            self->leaderRank = msg.nodeId;
+            break;
         break;
     case WAITING:
         switch (msg.msgId)
