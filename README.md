@@ -102,24 +102,18 @@ For the Slave, every msgId 119 received will trigger the CAN message handler and
 
 *Failure Mode F3*: The CAN connection wire is disconnected and resumed when the connection wire is plugged back in. No CAN message can be send.
 
-### The Watchdog (Test passed on 2 boards)
+### The Watchdog
 A watchdog is an object used to monitor the status of boards in a network. The basic operation logic of the watchdog is shown in the figure.
 
-![Watchdog](Graph/new_watchdog.jpg)
+![Watchdog](Graph/watchdog.png)
 
 ### Monitor 
 
-Monitor is a function that maintains the networkState array, which stores the current state of all boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
+Monitor is a function that sending broadcast message, which shown the current state of boards in the network: Master/Slave/F_1/F_2/F_3/Deactive, where Deactive is a Watchdog transient that does not exist in the committee. You will also notice that we have added three new states F_1/F_2/F_3 to the committee, which correspond to the three possible failures of the board.
 
 ![NetworkState](Graph/networkState.jpg)
 
-The monitor first set **networkState[myRank] = myMode**, then sends the corresponding CAN message according to its status, finally only the Master's Monitor runs with a [SNOOP_INTERVAL] cycle. *For Slave, their monitor will **start** after receiving msgId 64 from the Master*, which means that all Slave no longer start the monitor function autonomously. Once the current state of the board changes from Master to another state, then Monitor's period execution will stop.
-
-**Change Log**: During the test, we found that the original check start monitor may not be synchronized with the watchdog of Master and Slave in the reality. Due to the lack of information about the Master, the Slave starts to compete to become the Master at a certain point in time, resulting in the existence of two Masters in the network.
-
-
-
-![NetworkState change in normal case](Graph/new_networkState_change_in_normal.jpg)
+The monitor sends the corresponding CAN message according to its status, runs with a [SEND_INTERVAL] cycle. 
 
 As we had wipe all the states which is stored in networkState at the end of Check, we need to track all boards in every watch snoop. As we can know from the assignment, F1 and F2 mode could still handle the CAN message, which means it still send and response watchdog message. Therefore, in different states, watchdog will send different msgId, as shown in the following table.
 
@@ -156,6 +150,8 @@ As mentioned earlier, when we are in F_3 failure and have access to the network 
 We have to determine if there is a Master in the network and if MasterNum == 0, then we trigger the compete.
 
 Finally, reset the networkState to Deactive, and set ourself with my state.
+
+Check's runtime period is SNOOP INTERVAL, and SNOOP INTERVAL is a bit slower than SEND INTERVAL in our setup. The current settings are SNOOP_INTERVAL 800ms and SEND_INTERVAL 250ms, the purpose of this setting is to minimize the false dead condition in networkState when check.
 
 ### Passive backup for failure
 For failures to occur, we need to use passive backup to ensure that every note will be played. After the Master detects or receives a failure occurrence, it will replay the current note with noteId-1 in Melody, i.e. the next note.

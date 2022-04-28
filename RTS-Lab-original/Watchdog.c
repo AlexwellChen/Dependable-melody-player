@@ -167,10 +167,6 @@ void check(Watchdog *self, int unused)
         self->networkState[i] = DEACTIVE;
     }
     self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
-    if (myMode == F_1 || myMode == F_2)
-    {
-        // ASYNC(self, monitor, 0);
-    }
 }
 
 void monitor(Watchdog *self, int unused)
