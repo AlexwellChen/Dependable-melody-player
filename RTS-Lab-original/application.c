@@ -257,24 +257,6 @@ void print_mute_state(App *self, int arg)
 		return;
 }
 
-
-/* CAN protocol
- * msgId->1: increase the volume
- * msgId->2: decrease the volume
- * msgId->3: mute the melody
- * msgId->4: pause the melody
- * msgId->5: change the positive key msg.buff = new value (buffer size = 1)
- * msgId->6: change the negative key msg.buff = new value (buffer size = 1)
- * msgId->7: change the bpm msg.buff = new value (buffer size = 3)
- * msgId->8: reset the key and tempo
- * msgId->121: Response to detect member.
- * msgId-122: Detect member in the network.
- * msgId->123: Declare Leadership.
- * msgId->124: response to leader requirement.
- * msgId->125: reset the bpm to 120 and key to 0, nodeid is leader’s rank.
- * msgId->126: send board number in current network
- * msgId->127: Claim for leadership
- */
 void receiver(App *self, int unused)
 {
 	char strbuff[100];
@@ -341,14 +323,6 @@ void receiver(App *self, int unused)
 
 void pause_slave(Controller *self, int arg)
 {
-	// if (self->play == 1)
-	// {
-	// 	self->play = 0;
-	// }
-	// else
-	// {
-	// 	self->play = 1;
-	// }
 	self->play = 0;
 }
 
@@ -382,7 +356,6 @@ void compulsory_mute(Sound *self, int arg)
 	if (arg == 1)
 	{
 		self->volume = self->prev_volume;
-		// SCI_WRITE(&sci0, "Board is unmuted\n");
 	}
 	else if (arg == 0)
 	{
@@ -395,15 +368,12 @@ void mute(Sound *self)
 	if (self->volume == 0)
 	{
 		self->volume = self->prev_volume;
-		// Unlit the light when muted
 		SIO_WRITE(&sio0, 0);
 	}
 	else
 	{
 		self->prev_volume = self->volume;
 		self->volume = 0;
-		// SCI_WRITE(&sci0, "Board is muted\n");
-		// Lit when unmuted
 		ASYNC(&app, print_mute_state, 0);
 		SIO_WRITE(&sio0, 1);
 	}
@@ -425,8 +395,6 @@ void generateTone(Sound *tone, int unused)
 {
 	int half_period = tone->period; // in microsecond
 	char strbuff[100];
-	// sprintf(strbuff,"In generateTone, period is:%d,selfturn: %d\n",tone->period,tone->turn);
-	// SCI_WRITE(&sci0, strbuff);
 	if (*DAC_port == tone->volume)
 		*DAC_port = 0;
 	else
@@ -441,41 +409,6 @@ void generateTone(Sound *tone, int unused)
 	}
 }
 
-// void play(Sound *self, int arg)
-// {
-
-// 	self->flag = !self->flag;
-// 	if (self->gap || !self->turn)
-// 	{
-// 		*DAC_port = 0x00;
-// 	}
-// 	else
-// 	{
-// 		if (self->flag)
-// 		{
-// 			*DAC_port = self->volume;
-// 		}
-// 		else
-// 		{
-// 			*DAC_port = 0x00;
-// 		}
-// 	}
-// 	if (self->play)
-// 	{
-// 		if (self->deadline_enabled)
-// 		{
-// 			SEND(USEC(self->period), USEC(self->period), self, play, 0);
-// 		}
-// 		else
-// 		{
-// 			AFTER(USEC(self->period), self, play, 0);
-// 		}
-// 	}
-// 	else
-// 	{
-// 		return;
-// 	}
-// }
 void change_period(Sound *self, int arg)
 {
 	self->period = arg;
@@ -512,9 +445,12 @@ void toggle_led(Controller *self, int arg)
 
 void setLed(Controller *self, int arg)
 {
-	if(self->play){
+	if (self->play)
+	{
 		SIO_WRITE(&sio0, 0);
-	}else{
+	}
+	else
+	{
 		SIO_WRITE(&sio0, 1);
 	}
 }
@@ -664,7 +600,8 @@ void pause_c(Controller *self, int arg)
 
 		// ASYNC(&app, send_note_msg, self->note); // Send current noteId before playing this note.
 	}
-	if(self->play == 0){
+	if (self->play == 0)
+	{
 		msg.msgId = 4;
 		msg.nodeId = 0;
 		msg.length = 8;
@@ -672,10 +609,12 @@ void pause_c(Controller *self, int arg)
 	}
 }
 
-int getSoundCnt(Controller *self,int arg){
+int getSoundCnt(Controller *self, int arg)
+{
 	return self->soundCnt;
 }
-void setSoundCnt(Controller *self,int arg){
+void setSoundCnt(Controller *self, int arg)
+{
 	self->soundCnt = arg;
 }
 
@@ -830,7 +769,8 @@ void reader(App *self, int c)
 	switch (c)
 	{
 	case 'o':
-		if(state != MASTER){
+		if (state != MASTER)
+		{
 			ASYNC(&committee, newCompete, 0);
 		}
 		// ASYNC(&committee, IorS_to_M, 0);

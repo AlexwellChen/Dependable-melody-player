@@ -192,26 +192,10 @@ void send_Detecting_msg(Committee *self, int num)
     SCI_WRITE(&sci0, "CAN message send!\n");
 }
 
-// NOT USED ANYMORE
-//  void send_Detecting_ack_msg(Committee* self,int num){
-//  	CANMsg msg;
-//  	SCI_WRITE(&sci0,"--------------------send_Detecting_ack-------------------------\n");
-//  	char strbuff[100];
-//  	snprintf(strbuff,100,"BoardNum: %d\nLeaderRank: %d\nMyRank: %d\n",self->boardNum,self->leaderRank,self->myRank);
-//  	SCI_WRITE(&sci0,strbuff);
-//  	msg.nodeId = self->leaderRank;
-//  	msg.msgId = 121;
-//  	CAN_SEND(&can0, &msg);
-//  	SCI_WRITE(&sci0,"CAN message send!\n");
-//  }
-
 void send_Reset_msg(Committee *self, int arg)
 {
     CANMsg msg;
     SCI_WRITE(&sci0, "--------------------send_Reset_msg-------------------------\n");
-    // char strbuff[100];
-    // snprintf(strbuff,100,"BoardNum: %d \nLeaderRank: %d \nMyRank: %d \n",self->boardNum,self->leaderRank,self->myRank);
-    // SCI_WRITE(&sci0,strbuff);
     msg.nodeId = self->leaderRank;
     msg.msgId = 125;
     CAN_SEND(&can0, &msg);
@@ -234,18 +218,6 @@ void send_GetLeadership_msg(Committee *self, int arg)
     
 }
 
-// NOT USED ANYMORE
-//  void send_ResponseLeadership_msg (Committee *self ,int nodeId){
-//      CANMsg msg;
-//  	SCI_WRITE(&sci0,"--------------------Response for leadership compete-------------------------\n");
-//  	msg.nodeId = self->myRank;
-//  	msg.msgId = 124;
-//      char str_num[1];
-//     	sprintf(str_num,"%d", nodeId);
-//     	msg.length = 1;
-//      msg.buff[0] = str_num[0];
-//      CAN_SEND(&can0, &msg);
-//  }
 void newCompete(Committee *self, int arg){
     self->mode = MASTER;
     ASYNC(&watchdog, updateSlaveNetworkstate, self->leaderRank);
@@ -299,14 +271,6 @@ void change_StateAfterCompete(Committee *self, int arg)
 {
     if (self->isLeader)
     {
-        // self->mode = MASTER;
-        // self->leaderRank = self->myRank;
-        // // ASYNC(&watchdog, monitor, self->myRank);
-        // ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
-        // if (self->leaderRank == self->myRank && self->mode == MASTER)
-        // {
-        //     SCI_WRITE(&sci0, "Claimed Leadership!\n");
-        // }
         SCI_WRITE(&sci0, "I am the new leader!\n");
         ASYNC(self, IorS_to_M, 0);
     }

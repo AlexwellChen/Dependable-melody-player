@@ -119,13 +119,6 @@ void check(Watchdog *self, int unused)
         SYNC(&committee, setMode, SLAVE);
     }
 
-    if(self->canFlag == 1 && myMode == MASTER && previous_Bnum == 3){
-        snprintf(strbuff, 100, "MASTER is plug out from 3 boards by CAN\n");
-        SCI_WRITE(&sci0, strbuff);
-        self->networkState[myRank] = SLAVE;
-        self->networkStateforCheck[myRank] = SLAVE;
-        SYNC(&committee, setMode, SLAVE);
-    }
     if (boardNum < previous_Bnum)
     {
         snprintf(strbuff, 100, "boardNum: %d, previous num: %d, master num: %d, slave num: %d\n", boardNum, previous_Bnum, masterNum, slaveNum);
@@ -164,7 +157,6 @@ void check(Watchdog *self, int unused)
         {
             snprintf(strbuff, 100, "Previous master %d mode: %d\n", leaderRank, self->networkStateforCheck[leaderRank]);
             SCI_WRITE(&sci0, strbuff);
-            // ASYNC(&committee, D_to_F3, 0);
             if (self->networkStateforCheck[leaderRank] == F_1 || self->networkStateforCheck[leaderRank] == F_2)
             {
                 snprintf(strbuff, 100, "No master compete\n");
