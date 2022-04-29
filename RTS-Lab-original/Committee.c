@@ -365,6 +365,10 @@ void exit_Failuremode(Committee *self, int arg)
     self->mode = SLAVE;
     self->boardNum++;
     // self->leaderRank = -1;
+    if(self->myRank == self->leaderRank){
+        //I'm previous leader
+        SCI_WRITE(&sci0, "Joined as a Slave.\n");
+    }
     ASYNC(&watchdog, send_Recovery_msg, 0);
     ASYNC(&app, compulsory_mute, 1);
     AFTER(MSEC(100), self, checkLeaderExist, 0);
