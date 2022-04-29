@@ -77,6 +77,7 @@ void committee_recv(Committee *self, int addr)
         case 123:
             self->mode = SLAVE;
             ASYNC(&watchdog, updateSlaveNetworkstate, self->myRank);
+            ASYNC(&watchdog, updateMasterNetworkstate, msg.nodeId);
             self->leaderRank = msg.nodeId;
             SCI_WRITE(&sci0, "Leadership Void\n");
             break;
@@ -251,8 +252,16 @@ void newCompete(Committee *self, int arg){
     self->leaderRank = self->myRank;
     ASYNC(&watchdog, updateMasterNetworkstate, self->myRank);
     ASYNC(self, send_DeclareLeader_msg, 0); // msgId 123
-    SCI_WRITE(&sci0, "newCompete startSound!\n");
-    AFTER(MSEC(SNOOP_INTERVAL), &controller, startSound, SYNC(&controller, getBpm, 0));
+
+    
+    int soundCnt = SYNC(&controller, getSoundCnt, 0);
+    if(soundCnt == 0){
+        soundCnt++;
+        ASYNC(&controller, setSoundCnt, soundCnt);
+        AFTER(MSEC(SNOOP_INTERVAL), &controller, startSound, SYNC(&controller, getBpm, 0));
+        SCI_WRITE(&sci0, "newCompete startSound!\n");
+    }
+   
 
     SCI_WRITE(&sci0, "Claimed Leadership!\n");
     ASYNC(&controller, toggle_led, SYNC(&controller, getBpm, 0));
@@ -450,6 +459,12 @@ void committeeDebugOutput(Committee *self, int arg)
     }
     SCI_WRITE(&sci0, "\n");
 }
+
+void setMode(Committee *self, int mode)
+{
+	self->mode = mode;
+}
+
 
 void D_to_F1(Committee *self, int arg)
 {

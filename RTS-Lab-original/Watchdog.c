@@ -43,6 +43,7 @@ void watchdog_recv(Watchdog *self, int addr)
             self->networkState[myRank] = SLAVE;
         }
         self->networkState[msg.nodeId] = F_2;
+        self->networkStateforCheck[msg.nodeId] = F_2;
 
         break;
     case 61: // Failure F1
@@ -55,6 +56,7 @@ void watchdog_recv(Watchdog *self, int addr)
             // and then the committee->mode will change to Slave.
         }
         self->networkState[msg.nodeId] = F_1;
+        self->networkStateforCheck[msg.nodeId] = F_1;
 
         break;
     case 60: // New member join
@@ -77,6 +79,7 @@ void check(Watchdog *self, int unused)
     int masterNum = 0;
     int myMode = SYNC(&committee, read_state, 0);
     int previous_Bnum = SYNC(&committee, getBoardNum, 0);
+    int myRank = SYNC(&committee, getMyRank, 0);
     char strbuff[50];
     for (int i = 0; i < 3; i++)
     {
@@ -105,7 +108,25 @@ void check(Watchdog *self, int unused)
     self->masterNum = masterNum;
     self->slaveNum = slaveNum;
 
-    if (boardNum < previous_Bnum )
+    snprintf(strbuff, 100, "boardNum: %d, previous num: %d, myMode: %d\n", boardNum, previous_Bnum, myMode);
+    SCI_WRITE(&sci0, strbuff);
+    if (previous_Bnum == 3 && boardNum == 1 && myMode == MASTER)
+    {
+        snprintf(strbuff, 100, "MASTER is plug out from 3 boards\n");
+        SCI_WRITE(&sci0, strbuff);
+        self->networkState[myRank] = SLAVE;
+        self->networkStateforCheck[myRank] = SLAVE;
+        SYNC(&committee, setMode, SLAVE);
+    }
+
+    if(self->canFlag == 1 && myMode == MASTER && previous_Bnum == 3){
+        snprintf(strbuff, 100, "MASTER is plug out from 3 boards by CAN\n");
+        SCI_WRITE(&sci0, strbuff);
+        self->networkState[myRank] = SLAVE;
+        self->networkStateforCheck[myRank] = SLAVE;
+        SYNC(&committee, setMode, SLAVE);
+    }
+    if (boardNum < previous_Bnum)
     {
         snprintf(strbuff, 100, "boardNum: %d, previous num: %d, master num: %d, slave num: %d\n", boardNum, previous_Bnum, masterNum, slaveNum);
         SCI_WRITE(&sci0, strbuff);
@@ -115,7 +136,7 @@ void check(Watchdog *self, int unused)
 
     ASYNC(&committee, setBoardNum, boardNum);
 
-    if (masterNum > 1)
+    if (masterNum > 1 && myMode == MASTER)
     {
         snprintf(strbuff, 100, "Master num > 1 compete\n");
         ASYNC(self, watchdogDebugOutput, 0);
@@ -141,18 +162,22 @@ void check(Watchdog *self, int unused)
     { // There is no Master in current network
         if (boardNum == 1 && myMode == SLAVE)
         {
+            snprintf(strbuff, 100, "Previous master %d mode: %d\n", leaderRank, self->networkStateforCheck[leaderRank]);
+            SCI_WRITE(&sci0, strbuff);
             // ASYNC(&committee, D_to_F3, 0);
-            if (self->networkState[leaderRank] == F_1 || self->networkState[leaderRank] == F_2)
-            {   
+            if (self->networkStateforCheck[leaderRank] == F_1 || self->networkStateforCheck[leaderRank] == F_2)
+            {
                 snprintf(strbuff, 100, "No master compete\n");
                 ASYNC(self, watchdogDebugOutput, 0);
                 SCI_WRITE(&sci0, strbuff);
                 ASYNC(&committee, newCompete, 0);
-            }else{
+            }
+            else
+            {
                 ASYNC(&controller, set_play, 0);
             }
         }
-        else if (myMode == SLAVE)
+        else if (myMode == SLAVE && slaveNum == 2)
         {
             snprintf(strbuff, 100, "2 slaves compete\n");
             ASYNC(self, watchdogDebugOutput, 0);
@@ -164,7 +189,10 @@ void check(Watchdog *self, int unused)
     AFTER(MSEC(SNOOP_INTERVAL), self, check, 0);
     for (int i = 0; i < 3; i++)
     {
-        self->networkState[i] = DEACTIVE;
+        if (self->networkState[i] == MASTER || self->networkState[i] == SLAVE)
+        {
+            self->networkState[i] = DEACTIVE;
+        }
     }
     self->networkState[SYNC(&committee, getMyRank, 0)] = myMode;
 }
@@ -195,10 +223,10 @@ void monitor(Watchdog *self, int unused)
         msg.msgId = 61;
         break;
     }
-    
+
     if (myMode != F_1 && myMode != F_2)
     {
-        CAN_SEND(&can0, &msg);
+        self->canFlag = CAN_SEND(&can0, &msg);
     }
     AFTER(MSEC(SEND_INTERVAL), self, monitor, 0);
 }
@@ -270,20 +298,24 @@ void send_Recovery_ack(Watchdog *self, int unused)
     }
 }
 
-void updateMasterNetworkstate(Watchdog *self, int arg){
+void updateMasterNetworkstate(Watchdog *self, int arg)
+{
     self->networkState[arg] = MASTER;
     self->networkStateforCheck[arg] = MASTER;
 }
-void updateSlaveNetworkstate(Watchdog *self, int arg){
+void updateSlaveNetworkstate(Watchdog *self, int arg)
+{
     self->networkState[arg] = SLAVE;
     self->networkStateforCheck[arg] = SLAVE;
 }
 
-void updateF1Networkstate(Watchdog *self, int arg){
+void updateF1Networkstate(Watchdog *self, int arg)
+{
     self->networkState[arg] = F_1;
     self->networkStateforCheck[arg] = F_1;
 }
-void updateF2Networkstate(Watchdog *self, int arg){
+void updateF2Networkstate(Watchdog *self, int arg)
+{
     self->networkState[arg] = F_2;
     self->networkStateforCheck[arg] = F_2;
 }

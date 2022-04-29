@@ -48,6 +48,7 @@ void enter_Failure(Committee *, int);
 void exit_Failuremode(Committee *, int);
 void changeLeaderRank(Committee *, int);
 void committeeDebugOutput(Committee *, int);
+void setMode(Committee *, int);
 void D_to_F1(Committee *, int);
 void D_to_F2(Committee *, int);
 void D_to_F3(Committee *, int);

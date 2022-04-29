@@ -17,6 +17,7 @@ typedef struct
     int monitor_flag;
     int slaveNum;
     int masterNum;
+    int canFlag;
 } Watchdog;
 
 void watchdog_recv(Watchdog *, int );

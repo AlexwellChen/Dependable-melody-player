@@ -102,7 +102,7 @@ const int beats[32] = {2, 2, 2, 2, 2,
 
 App app = {initObject(), 0, 'X', {0}, 0, -1, 0, initTimer(), 0, 0, 0, 0, 0, -1, -1, -1, -1, 0, 1};
 Sound generator = {initObject(), 0, 0, 5, 0, 1, 0, 0, 0};
-Controller controller = {initObject(), 1, 0, 0, 120, 0, 0};
+Controller controller = {initObject(), 1, 0, 0, 120, 0, 0, 0};
 
 Serial sci0 = initSerial(SCI_PORT0, &app, reader);
 SysIO sio0 = initSysIO(SIO_PORT0, &app, user_call_back);
@@ -257,10 +257,6 @@ void print_mute_state(App *self, int arg)
 		return;
 }
 
-void setMode(App *self, int mode)
-{
-	self->mode = mode;
-}
 
 /* CAN protocol
  * msgId->1: increase the volume
@@ -624,6 +620,7 @@ void startSound(Controller *self, int arg)
 	}
 	else
 	{
+		self->soundCnt--;
 		return;
 	}
 }
@@ -673,6 +670,13 @@ void pause_c(Controller *self, int arg)
 		msg.length = 8;
 		CAN_SEND(&can0, &msg);
 	}
+}
+
+int getSoundCnt(Controller *self,int arg){
+	return self->soundCnt;
+}
+void setSoundCnt(Controller *self,int arg){
+	self->soundCnt = arg;
 }
 
 void change_key(Controller *self, int num)

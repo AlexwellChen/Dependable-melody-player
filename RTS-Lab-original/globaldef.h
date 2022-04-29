@@ -56,6 +56,7 @@ typedef struct
 	int bpm;
 	int change_bpm_flag;
 	int print_flag;
+	int soundCnt;
 	
 } Controller;
 
@@ -86,7 +87,6 @@ void send_key_msg(App *, int);
 void send_bmp_msg(App *, int);
 void send_note_msg(App *, int);
 void initNetwork(App *, int);
-void setMode(App *, int);
 
 void change_note(Controller *, int);
 
@@ -117,5 +117,7 @@ void toggle_led(Controller *, int);
 void pause_slave(Controller *,int);
 void set_play(Controller *,int);
 void setLed(Controller *,int);
+int getSoundCnt(Controller *,int);
+void setSoundCnt(Controller *,int);
 
 #endif
