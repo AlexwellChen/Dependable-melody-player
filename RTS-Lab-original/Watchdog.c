@@ -109,7 +109,7 @@ void check(Watchdog *self, int unused)
     {
         snprintf(strbuff, 100, "boardNum: %d, previous num: %d, master num: %d, slave num: %d\n", boardNum, previous_Bnum, masterNum, slaveNum);
         SCI_WRITE(&sci0, strbuff);
-
+        ASYNC(self, watchdogDebugOutput, 0);
         ASYNC(&controller, passive_backup, 0);
     }
 
